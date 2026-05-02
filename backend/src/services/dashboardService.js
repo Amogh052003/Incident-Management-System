@@ -27,42 +27,51 @@ async function getActiveIncidents(statusFilter = "ACTIVE") {
   console.log("🐢 DB hit");
 
   // 2. Fetch from DB
-  let query = `
-    SELECT id, component_id, status, start_time
-    FROM work_items
-  `;
+  let query = `SELECT id, component_id, status, severity, start_time FROM work_items`;
+  const values = [];
 
   if (statusFilter === "ACTIVE") {
-    query += `WHERE status != 'CLOSED'`;
+    query += ` WHERE status != $1`;
+    values.push("CLOSED");
   } else if (statusFilter !== "ALL") {
-    query += `WHERE status = '${statusFilter}'`;
+    query += ` WHERE status = $1`;
+    values.push(statusFilter);
   }
 
   query += ` ORDER BY created_at DESC`;
 
-  const res = await pgPool.query(query);
+  const res = await pgPool.query(query, values);
 
   const workItemIds = res.rows.map((row) => row.id);
   let signalCounts = {};
-  const isMongoConnected = mongoose.connection.readyState === 1;
 
-  if (workItemIds.length > 0 && isMongoConnected) {
-    try {
-      const aggregates = await Signal.aggregate([
-        { $match: { work_item_id: { $in: workItemIds } } },
-        { $group: { _id: "$work_item_id", count: { $sum: 1 } } },
-      ]);
+  if (workItemIds.length > 0) {
+    const countKeys = workItemIds.map((id) => `signal_count:${id}`);
+    const countValues = await redis.mget(...countKeys);
 
-      signalCounts = aggregates.reduce((acc, item) => {
-        acc[item._id] = item.count;
-        return acc;
-      }, {});
-    } catch (err) {
-      // Keep dashboard available even if Mongo metrics are temporarily unavailable.
-      console.warn("Signal count unavailable for active incidents:", err.message);
+    signalCounts = workItemIds.reduce((acc, id, index) => {
+      acc[id] = Number(countValues[index] ?? 0);
+      return acc;
+    }, {});
+
+    const missingCount = countValues.some((value) => value === null);
+    const isMongoConnected = mongoose.connection.readyState === 1;
+
+    if (missingCount && isMongoConnected) {
+      try {
+        const aggregates = await Signal.aggregate([
+          { $match: { work_item_id: { $in: workItemIds.map(String) } } },
+          { $group: { _id: "$work_item_id", count: { $sum: 1 } } },
+        ]);
+
+        signalCounts = aggregates.reduce((acc, item) => {
+          acc[item._id] = item.count;
+          return acc;
+        }, signalCounts);
+      } catch (err) {
+        console.warn("Signal count unavailable for active incidents:", err.message);
+      }
     }
-  } else if (!isMongoConnected) {
-    console.warn("Signal count skipped: MongoDB not connected.");
   }
 
   const incidents = res.rows.map((row) => ({
@@ -97,16 +106,21 @@ async function getIncidentById(id) {
   }
 
   let signalCount = 0;
-  const isMongoConnected = mongoose.connection.readyState === 1;
-  if (isMongoConnected) {
-    try {
-      signalCount = await Signal.countDocuments({ work_item_id: Number(id) });
-    } catch (err) {
-      // Keep incident details available even if Mongo metrics are temporarily unavailable.
-      console.warn("Signal count unavailable for incident detail:", err.message);
-    }
+  const countValue = await redis.get(`signal_count:${id}`);
+
+  if (countValue !== null) {
+    signalCount = Number(countValue);
   } else {
-    console.warn("Signal count skipped for incident detail: MongoDB not connected.");
+    const isMongoConnected = mongoose.connection.readyState === 1;
+    if (isMongoConnected) {
+      try {
+        signalCount = await Signal.countDocuments({ work_item_id: id });
+      } catch (err) {
+        console.warn("Signal count unavailable for incident detail:", err.message);
+      }
+    } else {
+      console.warn("Signal count skipped for incident detail: MongoDB not connected.");
+    }
   }
 
   const incident = {
@@ -119,7 +133,40 @@ async function getIncidentById(id) {
   return incident;
 }
 
+// 🔥 GET INCIDENT LOGS/SIGNALS
+async function getIncidentLogs(id, limit = 50) {
+  const cacheKey = `dashboard:logs:${id}:${limit}`;
+
+  const cached = await redis.get(cacheKey);
+  if (cached) {
+    console.log("⚡ Cache hit (logs)");
+    return JSON.parse(cached);
+  }
+
+  const isMongoConnected = mongoose.connection.readyState === 1;
+  if (!isMongoConnected) {
+    console.warn("Logs unavailable: MongoDB not connected.");
+    return [];
+  }
+
+  try {
+    const logs = await Signal.find({ work_item_id: id })
+      .sort({ timestamp: -1 })
+      .limit(limit)
+      .select('component_id message timestamp')
+      .lean();
+
+    await redis.set(cacheKey, JSON.stringify(logs), "EX", 30);
+
+    return logs;
+  } catch (err) {
+    console.warn("Error fetching logs:", err.message);
+    return [];
+  }
+}
+
 module.exports = {
   getActiveIncidents,
   getIncidentById,
+  getIncidentLogs,
 };

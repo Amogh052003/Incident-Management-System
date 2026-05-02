@@ -173,6 +173,24 @@ tbody tr:hover {
   color: #dcfce7;
 }
 
+.badge-p0 {
+  background: rgba(239, 68, 68, 0.28);
+  border: 1px solid rgba(239, 68, 68, 0.72);
+  color: #fee2e2;
+}
+
+.badge-p1 {
+  background: rgba(249, 115, 22, 0.28);
+  border: 1px solid rgba(249, 115, 22, 0.72);
+  color: #fed7aa;
+}
+
+.badge-p2 {
+  background: rgba(234, 179, 8, 0.28);
+  border: 1px solid rgba(234, 179, 8, 0.72);
+  color: #fef3c7;
+}
+
 .detail-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -259,6 +277,46 @@ textarea {
 
 .rca-block p {
   margin-bottom: 8px;
+}
+
+.logs-container {
+  max-height: 400px;
+  overflow-y: auto;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  background: rgba(8, 10, 14, 0.3);
+}
+
+.log-entry {
+  padding: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.log-entry:last-child {
+  border-bottom: none;
+}
+
+.log-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+  font-size: 0.8rem;
+}
+
+.log-timestamp {
+  color: #9fa6b5;
+}
+
+.log-component {
+  color: #60a5fa;
+  font-weight: 500;
+}
+
+.log-message {
+  color: #e2e8f0;
+  font-size: 0.9rem;
+  line-height: 1.4;
 }
 
 @media (max-width: 950px) {

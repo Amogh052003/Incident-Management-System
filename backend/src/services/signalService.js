@@ -76,13 +76,29 @@ async function processSignal(signal) {
       })
     );
 
+    await redis.incr(`signal_count:${workItemId}`);
+
+    const severity = triggerAlert(signal);
+    const now = new Date();
+    const bucket = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}:${String(now.getHours()).padStart(2, "0")}:00`;
+
+    await redis.incr(`signals:${bucket}`);
+    await redis.incr(`severity:${severity}:${bucket}`);
+
     await redis.del("dashboard:active");
 
     if (workItemId) {
       await redis.del(`dashboard:incident:${workItemId}`);
     }
 
-    triggerAlert(signal);
+    if (result === "OK") {
+      await retry(() =>
+        pgPool.query(
+          `UPDATE work_items SET severity = $1 WHERE id = $2`,
+          [severity, workItemId]
+        )
+      );
+    }
 
     increment();
 

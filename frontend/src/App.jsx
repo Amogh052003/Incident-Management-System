@@ -16,6 +16,13 @@ function statusClass(status) {
   return "";
 }
 
+function severityClass(severity) {
+  if (severity === "P0") return "badge-p0";
+  if (severity === "P1") return "badge-p1";
+  if (severity === "P2") return "badge-p2";
+  return "";
+}
+
 export default function App() {
   const [incidents, setIncidents] = useState([]);
   const [statusFilter, setStatusFilter] = useState("ALL");
@@ -28,6 +35,8 @@ export default function App() {
   const [actionError, setActionError] = useState("");
   const [actionSuccess, setActionSuccess] = useState("");
   const [rca, setRca] = useState({ root_cause: "", fix: "", prevention: "" });
+  const [logs, setLogs] = useState([]);
+  const [loadingLogs, setLoadingLogs] = useState(false);
 
   async function fetchIncidents() {
     try {
@@ -51,6 +60,7 @@ export default function App() {
   async function fetchIncidentDetail(id) {
     if (!id) {
       setSelectedIncident(null);
+      setLogs([]);
       return;
     }
 
@@ -74,6 +84,26 @@ export default function App() {
     }
   }
 
+  async function fetchIncidentLogs(id) {
+    if (!id) {
+      setLogs([]);
+      return;
+    }
+
+    setLoadingLogs(true);
+    try {
+      const res = await fetch(`/incidents/${id}/logs?limit=100`);
+      if (!res.ok) throw new Error("Failed to fetch logs");
+      const data = await res.json();
+      setLogs(data);
+    } catch (err) {
+      console.error("Error fetching logs:", err);
+      setLogs([]);
+    } finally {
+      setLoadingLogs(false);
+    }
+  }
+
   useEffect(() => {
     fetchIncidents();
     const timer = setInterval(fetchIncidents, POLL_MS);
@@ -82,6 +112,7 @@ export default function App() {
 
   useEffect(() => {
     fetchIncidentDetail(selectedId);
+    fetchIncidentLogs(selectedId);
   }, [selectedId]);
 
   const canResolve = selectedIncident?.status === "OPEN";
@@ -173,6 +204,7 @@ export default function App() {
                   <tr>
                     <th>ID</th>
                     <th>Component</th>
+                    <th>Severity</th>
                     <th>Status</th>
                     <th>Start Time</th>
                     <th>Signals</th>
@@ -187,6 +219,11 @@ export default function App() {
                     >
                       <td>{item.id}</td>
                       <td>{item.component_id}</td>
+                      <td>
+                        <span className={`badge ${severityClass(item.severity)}`}>
+                          {item.severity}
+                        </span>
+                      </td>
                       <td>
                         <span className={`badge ${statusClass(item.status)}`}>
                           {item.status}
@@ -226,6 +263,14 @@ export default function App() {
                 <div>
                   <p className="label">Component</p>
                   <p>{selectedIncident.component_id}</p>
+                </div>
+                <div>
+                  <p className="label">Severity</p>
+                  <p>
+                    <span className={`badge ${severityClass(selectedIncident.severity)}`}>
+                      {selectedIncident.severity}
+                    </span>
+                  </p>
                 </div>
                 <div>
                   <p className="label">Start Time</p>
@@ -325,6 +370,27 @@ export default function App() {
                   )}
                 </div>
               )}
+
+              <div className="form-block">
+                <h3>Incident Logs</h3>
+                {loadingLogs ? (
+                  <p className="muted">Loading logs...</p>
+                ) : logs.length === 0 ? (
+                  <p className="muted">No logs available.</p>
+                ) : (
+                  <div className="logs-container">
+                    {logs.map((log, index) => (
+                      <div key={index} className="log-entry">
+                        <div className="log-header">
+                          <span className="log-timestamp">{formatDate(log.timestamp)}</span>
+                          <span className="log-component">{log.component_id}</span>
+                        </div>
+                        <div className="log-message">{log.message}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
 
               {actionError && <p className="error-text">{actionError}</p>}
               {actionSuccess && <p className="success-text">{actionSuccess}</p>}
