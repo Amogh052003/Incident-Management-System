@@ -1,9 +1,22 @@
 const { pgPool } = require("../db/postgres");
 const mongoose = require("mongoose");
 const Signal = require("../models/signal");
-const { createRedisClient } = require("../db/redis");
+const redis = require("../db/redis");
 
-const redis = createRedisClient("dashboard");
+const DASHBOARD_LIST_CACHE_KEYS = [
+  "dashboard:active",
+  "dashboard:all",
+  "dashboard:status:OPEN",
+  "dashboard:status:INVESTIGATING",
+  "dashboard:status:RESOLVED",
+  "dashboard:status:CLOSED",
+];
+
+async function invalidateDashboardListCaches() {
+  if (DASHBOARD_LIST_CACHE_KEYS.length > 0) {
+    await redis.del(...DASHBOARD_LIST_CACHE_KEYS);
+  }
+}
 
 // 🔥 GET ALL INCIDENTS WITH STATUS FILTER
 async function getActiveIncidents(statusFilter = "ACTIVE") {
@@ -20,11 +33,8 @@ async function getActiveIncidents(statusFilter = "ACTIVE") {
   // 1. Check cache
   const cached = await redis.get(cacheKey);
   if (cached) {
-    console.log("⚡ Cache hit");
     return JSON.parse(cached);
   }
-
-  console.log("🐢 DB hit");
 
   // 2. Fetch from DB
   let query = `SELECT id, component_id, status, severity, start_time FROM work_items`;
@@ -86,13 +96,12 @@ async function getActiveIncidents(statusFilter = "ACTIVE") {
   return incidents;
 }
 
-// 🔥 GET INCIDENT DETAILS
+// GET INCIDENT DETAILS
 async function getIncidentById(id) {
   const cacheKey = `dashboard:incident:${id}`;
 
   const cached = await redis.get(cacheKey);
   if (cached) {
-    console.log("⚡ Cache hit (detail)");
     return JSON.parse(cached);
   }
 
@@ -139,7 +148,7 @@ async function getIncidentLogs(id, limit = 50) {
 
   const cached = await redis.get(cacheKey);
   if (cached) {
-    console.log("⚡ Cache hit (logs)");
+    console.log("Cache hit (logs)");
     return JSON.parse(cached);
   }
 
@@ -169,4 +178,5 @@ module.exports = {
   getActiveIncidents,
   getIncidentById,
   getIncidentLogs,
+  invalidateDashboardListCaches,
 };

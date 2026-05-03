@@ -3,9 +3,8 @@ global.crypto = require("crypto").webcrypto;
 const { processSignal } = require("../services/signalService");
 const { connectMongo } = require("../db/mongo");
 const { getAndReset } = require("../utils/metrics");
-const { createRedisClient } = require("../db/redis");
-
-const redis = createRedisClient("signal-worker");
+const RawSignal = require("../models/rawSignal");
+const redis = require("../db/redis");
 
 async function startWorker() {
   await connectMongo();
@@ -34,6 +33,12 @@ async function startWorker() {
         console.error("Invalid JSON:", data[1]);
         continue;
       }
+
+      // Store raw signal in MongoDB
+      await RawSignal.create({
+        payload: signal,
+        timestamp: new Date(),
+      });
 
       await processSignal(signal);
 

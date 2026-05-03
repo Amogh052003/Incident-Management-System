@@ -1,6 +1,4 @@
-const { createRedisClient } = require("../db/redis");
-
-const redis = createRedisClient("rate-limiter");
+const redis = require("../db/redis");
 
 const WINDOW_SIZE = 10; // seconds
 const MAX_REQUESTS = 100;

@@ -2,9 +2,9 @@ const BaseState = require("./baseState");
 
 class OpenState extends BaseState {
   async transition(newStatus, data) {
-    if (newStatus === "RESOLVED") {
+    if (newStatus === "INVESTIGATING") {
       return {
-        status: "RESOLVED",
+        status: "INVESTIGATING",
         start_time: this.workItem.start_time || new Date(),
       };
     }

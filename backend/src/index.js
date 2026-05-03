@@ -34,10 +34,35 @@ async function ensurePostgresSchema() {
   `);
 }
 
+async function waitForPostgres(maxAttempts = 20, delayMs = 2000) {
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      await ensurePostgresSchema();
+      return;
+    } catch (err) {
+      const isLastAttempt = attempt === maxAttempts;
+      console.warn(
+        `[postgres] not ready (attempt ${attempt}/${maxAttempts}): ${err.message}`
+      );
+      if (isLastAttempt) {
+        throw err;
+      }
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+  }
+}
+
 async function start() {
   await connectMongo();
-  await ensurePostgresSchema();
-  app.listen(3000, () => console.log("API running"));
+  await waitForPostgres();
+
+  const server = app.listen(3000, () => {
+    console.log("API running");
+  });
+
+  server.keepAliveTimeout = 5000;
+  server.headersTimeout = 6000;
+  server.maxConnections = 2000;
 }
 
 start();

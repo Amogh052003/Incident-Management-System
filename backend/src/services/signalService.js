@@ -4,9 +4,8 @@ const { pgPool } = require("../db/postgres");
 const { increment } = require("../utils/metrics");
 const retry = require("../utils/retry");
 const { triggerAlert } = require("./alertService");
-const { createRedisClient } = require("../db/redis");
-
-const redis = createRedisClient("signal-service");
+const redis = require("../db/redis");
+const { invalidateDashboardListCaches } = require("./dashboardService");
 
 async function processSignal(signal) {
   const { component_id, message } = signal;
@@ -31,10 +30,10 @@ async function processSignal(signal) {
 
       if (existing.rows.length > 0) {
         workItemId = existing.rows[0].id;
-        console.log(`🔁 Reusing Work Item ${workItemId}`);
+        console.log(`Reusing Work Item ${workItemId}`);
       } else {
         workItemId = await retry(() => createWorkItem(component_id));
-        console.log(`🔥 Created Work Item ${workItemId}`);
+        console.log(`Created Work Item ${workItemId}`);
       }
 
       await redis.set(workKey, workItemId, "EX", 3600);
@@ -62,11 +61,10 @@ async function processSignal(signal) {
       }
 
       if (Math.random() < 0.1) {
-        console.log(`🔁 Duplicate → Work Item ${workItemId}`);
+        console.log(`Duplicate → Work Item ${workItemId}`);
       }
     }
-
-    // ✅ Store first
+    
     await retry(() =>
       Signal.create({
         component_id,
@@ -85,7 +83,7 @@ async function processSignal(signal) {
     await redis.incr(`signals:${bucket}`);
     await redis.incr(`severity:${severity}:${bucket}`);
 
-    await redis.del("dashboard:active");
+    await invalidateDashboardListCaches();
 
     if (workItemId) {
       await redis.del(`dashboard:incident:${workItemId}`);

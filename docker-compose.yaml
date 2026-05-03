@@ -1,10 +1,12 @@
 version: "3.8"
 
 services:
+  # ---------- Infra ----------
   redis:
     image: redis:7
     ports:
       - "6379:6379"
+    restart: unless-stopped
 
   postgres:
     image: postgres:15
@@ -14,10 +16,75 @@ services:
       POSTGRES_DB: ims_db
     ports:
       - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ims -d ims_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     volumes:
       - ./backend/db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: unless-stopped
 
   mongo:
     image: mongo:6
     ports:
       - "27017:27017"
+    restart: unless-stopped
+
+  # ---------- Backend API ----------
+  backend:
+    build:
+      context: ./backend
+    ports:
+      - "3000:3000"
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      PGHOST: postgres
+      PGUSER: ims
+      PGPASSWORD: ims
+      PGDATABASE: ims_db
+      PGPORT: 5432
+      MONGO_URL: mongodb://mongo:27017/ims
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      mongo:
+        condition: service_started
+    restart: unless-stopped
+    command: node src/index.js
+
+  # ---------- Worker (scaled) ----------
+  worker:
+    build:
+      context: ./backend
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      PGHOST: postgres
+      PGUSER: ims
+      PGPASSWORD: ims
+      PGDATABASE: ims_db
+      PGPORT: 5432
+      MONGO_URL: mongodb://mongo:27017/ims
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      mongo:
+        condition: service_started
+    restart: unless-stopped
+    command: node src/workers/signalWorker.js
+
+  # ---------- Frontend ----------
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+    restart: unless-stopped

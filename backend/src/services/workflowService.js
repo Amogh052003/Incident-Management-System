@@ -1,8 +1,7 @@
 const { pgPool } = require("../db/postgres");
 const { getState } = require("../states/stateFactory");
-const { createRedisClient } = require("../db/redis");
-
-const redis = createRedisClient("workflow");
+const redis = require("../db/redis");
+const { invalidateDashboardListCaches } = require("./dashboardService");
 
 async function updateStatus(id, newStatus, data = {}) {
   const client = await pgPool.connect();
@@ -42,7 +41,7 @@ async function updateStatus(id, newStatus, data = {}) {
 
     await client.query("COMMIT");
 
-    await redis.del("dashboard:active");
+    await invalidateDashboardListCaches();
     await redis.del(`dashboard:incident:${id}`);
 
     return "Status updated";

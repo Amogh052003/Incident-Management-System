@@ -1,22 +1,18 @@
 const express = require("express");
-const RawSignal = require("../models/rawSignal");
-const { createRedisClient } = require("../db/redis");
+const redis = require("../db/redis");
 
 const router = express.Router();
-const redis = createRedisClient("signal-routes");
 
 router.post("/", async (req, res) => {
   try {
-    await RawSignal.create({
-      payload: req.body,
-      timestamp: new Date(),
-    });
+    const pipeline = redis.pipeline();
+    pipeline.lpush("signal_queue", JSON.stringify(req.body));
+    await pipeline.exec();
 
-    await redis.lpush("signal_queue", JSON.stringify(req.body));
-    res.status(202).send("accepted");
+    return res.status(202).json({ status: "accepted" });
   } catch (err) {
-    console.error("Failed to store raw signal:", err);
-    res.status(500).send("Failed to store raw signal");
+    console.error("Failed to queue signal:", err);
+    return res.status(500).json({ error: err.message });
   }
 });
 

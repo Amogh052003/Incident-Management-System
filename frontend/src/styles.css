@@ -167,6 +167,12 @@ tbody tr:hover {
   color: #fef9c3;
 }
 
+.badge-investigating {
+  background: rgba(59, 130, 246, 0.24);
+  border: 1px solid rgba(59, 130, 246, 0.68);
+  color: #bfdbfe;
+}
+
 .badge-closed {
   background: rgba(34, 197, 94, 0.28);
   border: 1px solid rgba(34, 197, 94, 0.72);

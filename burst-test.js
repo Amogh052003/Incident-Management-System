@@ -1,116 +1,120 @@
 #!/usr/bin/env node
 
-const http = require('http');
+const http = require("http");
 
 /**
- * Burst Test Script - Generates multiple incidents rapidly
+ * Burst Test Script (Improved)
+ * - Sends signals concurrently
+ * - Correctly detects success (2xx)
+ * - No invalid work_item_id
  */
 
-const API_URL = 'http://localhost:3000';
+const API_URL = "http://localhost:3000";
 
-// Sample incident data
+// Sample data
 const components = [
-  'database-service',
-  'api-gateway',
-  'cache-layer',
-  'payment-processor',
-  'auth-service',
-  'notification-service',
-  'storage-service',
-  'monitoring-service'
+  "database-service",
+  "api-gateway",
+  "cache-layer",
+  "payment-processor",
+  "auth-service",
+  "notification-service",
+  "storage-service",
+  "monitoring-service",
 ];
 
 const messages = [
-  'High memory usage detected',
-  'Connection timeout',
-  'Database query exceeds threshold',
-  'Service unavailable',
-  'Request latency critical',
-  'Failed authentication attempt',
-  'Disk space low',
-  'CPU usage spike',
-  'Network packet loss',
-  'Configuration invalid'
+  "High memory usage detected",
+  "Connection timeout",
+  "Database query exceeds threshold",
+  "Service unavailable",
+  "Request latency critical",
+  "Failed authentication attempt",
+  "Disk space low",
+  "CPU usage spike",
+  "Network packet loss",
+  "Configuration invalid",
 ];
 
-async function sendSignal(componentId, message) {
+// Send one signal
+function sendSignal(componentId, message) {
   return new Promise((resolve, reject) => {
     const payload = JSON.stringify({
       component_id: componentId,
       message: message,
-      work_item_id: Math.floor(Math.random() * 10000),
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
 
-    const options = {
-      hostname: 'localhost',
-      port: 3000,
-      path: '/signal',
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(payload)
-      }
-    };
-
-    const req = http.request(options, (res) => {
-      let data = '';
-      res.on('data', chunk => data += chunk);
-      res.on('end', () => {
-        resolve({
-          status: res.statusCode,
-          component: componentId,
-          message: message
+    const req = http.request(
+      {
+        hostname: "localhost",
+        port: 3000,
+        path: "/signal",
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Content-Length": Buffer.byteLength(payload),
+        },
+      },
+      (res) => {
+        res.on("data", () => {}); // ignore body
+        res.on("end", () => {
+          resolve(res.statusCode);
         });
-      });
-    });
+      }
+    );
 
-    req.on('error', reject);
+    req.on("error", reject);
     req.write(payload);
     req.end();
   });
 }
 
-async function burstTest(count = 50, delayMs = 50) {
-  console.log(`\n🚀 Starting BURST TEST - Generating ${count} incidents\n`);
-  console.log(`📊 Sending ${Math.round(1000 / delayMs)} incidents/sec\n`);
+// Burst runner
+async function burstTest(total = 50, ratePerSec = 20) {
+  console.log(`\n🚀 Starting BURST TEST - Generating ${total} signals`);
+  console.log(`📊 Target rate: ${ratePerSec} signals/sec\n`);
 
-  let successCount = 0;
-  let errorCount = 0;
+  const delay = 1000 / ratePerSec;
+  let success = 0;
+  let failed = 0;
 
-  for (let i = 1; i <= count; i++) {
-    try {
-      const component = components[Math.floor(Math.random() * components.length)];
-      const message = messages[Math.floor(Math.random() * messages.length)];
+  for (let i = 0; i < total; i++) {
+    const component =
+      components[Math.floor(Math.random() * components.length)];
+    const message =
+      messages[Math.floor(Math.random() * messages.length)];
 
-      const result = await sendSignal(component, message);
+    // Fire request (no await → concurrency)
+    sendSignal(component, message)
+      .then((status) => {
+        if (status >= 200 && status < 300) {
+          success++;
+        } else {
+          failed++;
+          console.log(`❌ Failed with status ${status}`);
+        }
+      })
+      .catch((err) => {
+        failed++;
+        console.log(`❌ Error: ${err.message}`);
+      });
 
-      if (result.status === 202) {
-        successCount++;
-        console.log(`✅ [${i}/${count}] ${component}: ${message}`);
-      } else {
-        errorCount++;
-        console.log(`❌ [${i}/${count}] Failed with status ${result.status}`);
-      }
-
-      // Delay between requests
-      await new Promise(resolve => setTimeout(resolve, delayMs));
-
-    } catch (err) {
-      errorCount++;
-      console.log(`❌ [${i}/${count}] Error: ${err.message}`);
-    }
+    // Control rate
+    await new Promise((r) => setTimeout(r, delay));
   }
 
+  // Wait for all to finish
+  await new Promise((r) => setTimeout(r, 2000));
+
   console.log(`\n📈 TEST COMPLETE`);
-  console.log(`✅ Successful: ${successCount}`);
-  console.log(`❌ Failed: ${errorCount}`);
-  console.log(`\n🎯 Open http://localhost:5174 to view incidents on the dashboard`);
-  console.log(`\n⏱️  Dashboard polls every 5 seconds for updates\n`);
+  console.log(`✅ Successful: ${success}`);
+  console.log(`❌ Failed: ${failed}`);
+  console.log(`\n🌐 Open http://localhost:5173 to view dashboard\n`);
 }
 
-// Run burst test with parameters
-const count = parseInt(process.argv[2]) || 50;
-const delayMs = parseInt(process.argv[3]) || 50;
+// CLI args
+const total = parseInt(process.argv[2]) || 50;
+const rate = parseInt(process.argv[3]) || 20;
 
-burstTest(count, delayMs).catch(console.error);
+burstTest(total, rate).catch(console.error);

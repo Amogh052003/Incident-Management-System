@@ -7,12 +7,12 @@ class P1Strategy extends AlertStrategy {
   }
 
   sendAlert(context) {
-    console.log("⚠️ P1 ALERT: High priority issue");
+    console.log("P1 ALERT: High priority issue");
     console.log(`Component: ${context.component_id}`);
     console.log(`Message: ${context.message}`);
 
     // simulate notification
-    console.log("📢 Notifying engineering team!");
+    console.log("Notifying engineering team!");
   }
 }
 

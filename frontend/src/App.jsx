@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 const POLL_MS = 5000;
 
@@ -11,6 +11,7 @@ function formatDate(value) {
 
 function statusClass(status) {
   if (status === "OPEN") return "badge-open";
+  if (status === "INVESTIGATING") return "badge-investigating";
   if (status === "RESOLVED") return "badge-resolved";
   if (status === "CLOSED") return "badge-closed";
   return "";
@@ -37,6 +38,10 @@ export default function App() {
   const [rca, setRca] = useState({ root_cause: "", fix: "", prevention: "" });
   const [logs, setLogs] = useState([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
+  const selectedIdRef = useRef(selectedId);
+  useEffect(() => {
+    selectedIdRef.current = selectedId;
+  }, [selectedId]);
 
   async function fetchIncidents() {
     try {
@@ -69,6 +74,7 @@ export default function App() {
       const res = await fetch(`/incidents/${id}`);
       if (!res.ok) throw new Error("Failed to fetch incident detail");
       const data = await res.json();
+      if (selectedIdRef.current !== id) return;
       setSelectedIncident(data);
       setActionError("");
 
@@ -78,7 +84,9 @@ export default function App() {
         prevention: data?.rca?.prevention || "",
       });
     } catch (err) {
-      setActionError(err.message);
+      if (selectedIdRef.current === id) {
+        setActionError(err.message);
+      }
     } finally {
       setLoadingDetail(false);
     }
@@ -95,6 +103,7 @@ export default function App() {
       const res = await fetch(`/incidents/${id}/logs?limit=100`);
       if (!res.ok) throw new Error("Failed to fetch logs");
       const data = await res.json();
+      if (selectedIdRef.current !== id) return;
       setLogs(data);
     } catch (err) {
       console.error("Error fetching logs:", err);
@@ -108,32 +117,38 @@ export default function App() {
     fetchIncidents();
     const timer = setInterval(fetchIncidents, POLL_MS);
     return () => clearInterval(timer);
-  }, [statusFilter]);
+  }, [statusFilter, selectedId]);
 
   useEffect(() => {
     fetchIncidentDetail(selectedId);
     fetchIncidentLogs(selectedId);
   }, [selectedId]);
 
-  const canResolve = selectedIncident?.status === "OPEN";
+  useEffect(() => {
+    setActionSuccess("");
+  }, [selectedId]);
+
+  const canInvestigate = selectedIncident?.status === "OPEN";
+  const canResolve = selectedIncident?.status === "INVESTIGATING";
   const canClose = selectedIncident?.status === "RESOLVED";
   const isReadOnly = selectedIncident?.status === "CLOSED";
   const filteredIncidents = incidents; // Backend now filters by status
 
   const rcaInvalid = useMemo(() => {
-    if (!canClose) return false;
+    if (!canResolve) return false;
     return !rca.root_cause.trim() || !rca.fix.trim() || !rca.prevention.trim();
-  }, [canClose, rca]);
+  }, [canResolve, rca]);
 
   async function updateStatus(status) {
     if (!selectedIncident?.id) return;
 
+    const targetId = selectedIncident.id;
     setActionLoading(true);
     setActionError("");
     setActionSuccess("");
     try {
       const payload = { status };
-      if (status === "CLOSED") {
+      if (status === "RESOLVED") {
         payload.rca = {
           root_cause: rca.root_cause.trim(),
           fix: rca.fix.trim(),
@@ -141,7 +156,7 @@ export default function App() {
         };
       }
 
-      const res = await fetch(`/workitem/${selectedIncident.id}/status`, {
+      const res = await fetch(`/workitem/${targetId}/status`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -152,10 +167,13 @@ export default function App() {
         throw new Error(message || "Failed to update status");
       }
 
-      await Promise.all([fetchIncidents(), fetchIncidentDetail(selectedIncident.id)]);
+      await Promise.all([fetchIncidents(), fetchIncidentDetail(targetId)]);
+      if (selectedIdRef.current !== targetId) return;
       setActionSuccess(`Incident moved to ${status}.`);
     } catch (err) {
-      setActionError(err.message);
+      if (selectedIdRef.current === targetId) {
+        setActionError(err.message);
+      }
     } finally {
       setActionLoading(false);
     }
@@ -187,6 +205,7 @@ export default function App() {
               >
                 <option value="ALL">All</option>
                 <option value="OPEN">OPEN</option>
+                <option value="INVESTIGATING">INVESTIGATING</option>
                 <option value="RESOLVED">RESOLVED</option>
                 <option value="CLOSED">CLOSED</option>
               </select>
@@ -196,7 +215,7 @@ export default function App() {
           {loadingList ? (
             <p className="muted">Loading incidents...</p>
           ) : filteredIncidents.length === 0 ? (
-            <p className="muted">No active incidents 🎉</p>
+            <p className="muted">No active incidents!</p>
           ) : (
             <div className="table-wrap">
               <table>
@@ -288,17 +307,17 @@ export default function App() {
 
               <div className="form-block">
                 <h3>Update Status</h3>
-                {canResolve && (
+                {canInvestigate && (
                   <button
                     className="button"
                     disabled={actionLoading}
-                    onClick={() => updateStatus("RESOLVED")}
+                    onClick={() => updateStatus("INVESTIGATING")}
                   >
-                    {actionLoading ? "Updating..." : "Resolve Incident"}
+                    {actionLoading ? "Updating..." : "Start Investigation"}
                   </button>
                 )}
 
-                {canClose && (
+                {canResolve && (
                   <>
                     <div className="field-group">
                       <label>Root Cause</label>
@@ -333,11 +352,21 @@ export default function App() {
                     <button
                       className="button"
                       disabled={actionLoading || rcaInvalid}
-                      onClick={() => updateStatus("CLOSED")}
+                      onClick={() => updateStatus("RESOLVED")}
                     >
-                      {actionLoading ? "Updating..." : "Close Incident"}
+                      {actionLoading ? "Updating..." : "Resolve Incident"}
                     </button>
                   </>
+                )}
+
+                {canClose && (
+                  <button
+                    className="button"
+                    disabled={actionLoading}
+                    onClick={() => updateStatus("CLOSED")}
+                  >
+                    {actionLoading ? "Updating..." : "Close Incident"}
+                  </button>
                 )}
 
                 {isReadOnly && (
