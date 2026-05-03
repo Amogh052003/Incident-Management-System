@@ -112,22 +112,6 @@ API → Redis Queue → Worker → DB
 
 ---
 
-# Load Testing
-
-Tested using:
-
-```bash
-autocannon -c 100 -d 10 http://localhost:3000/signal
-```
-
-Results:
-
-* ~3500 req/sec sustained throughput
-* ~25ms avg latency under concurrency
-* System stable — no crashes, no dropped signals
-
----
-
 # Key Features
 
 ## 1. High Throughput Ingestion
