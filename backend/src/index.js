@@ -4,8 +4,11 @@ const workItemRoutes = require("./api/workitem.routes");
 const rateLimiter = require("./middleware/rateLimiter");
 const dashboardRoutes = require("./api/dashboard.routes");
 const { connectMongo } = require("./db/mongo");
+const eventBus = require("./core/events/eventBus");
+const redis = require("./db/redis");
 const { pgPool } = require("./db/postgres");
-
+const { loadPlugins } = require("./core/plugins/pluginRegistry");
+require("./core/events/eventHandlers");
 // Fix for Node.js crypto compatibility with Mongoose
 global.crypto = require("crypto").webcrypto;
 
@@ -55,6 +58,12 @@ async function waitForPostgres(maxAttempts = 20, delayMs = 2000) {
 async function start() {
   await connectMongo();
   await waitForPostgres();
+
+  await loadPlugins({
+    redis,
+    pgPool,
+    eventBus,
+  });
 
   const server = app.listen(3000, () => {
     console.log("API running");

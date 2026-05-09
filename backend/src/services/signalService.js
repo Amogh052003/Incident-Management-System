@@ -6,7 +6,8 @@ const retry = require("../utils/retry");
 const { triggerAlert } = require("./alertService");
 const redis = require("../db/redis");
 const { invalidateDashboardListCaches } = require("./dashboardService");
-
+const eventBus = require("../core/events/eventBus");
+const EVENTS = require("../core/events/eventTypes");
 async function processSignal(signal) {
   const { component_id, message } = signal;
 
@@ -17,7 +18,7 @@ async function processSignal(signal) {
     const result = await redis.set(debounceKey, "1", "NX", "EX", 10);
 
     let workItemId;
-
+    let incidentCreated = false;
     if (result === "OK") {
       const existing = await retry(() =>
         pgPool.query(
@@ -33,6 +34,7 @@ async function processSignal(signal) {
         console.log(`Reusing Work Item ${workItemId}`);
       } else {
         workItemId = await retry(() => createWorkItem(component_id));
+        incidentCreated = true;
         console.log(`Created Work Item ${workItemId}`);
       }
 
@@ -101,7 +103,14 @@ async function processSignal(signal) {
     increment();
 
     console.log(" Signal stored");
-
+    if (incidentCreated) {
+      eventBus.emit(EVENTS.INCIDENT_CREATED, {
+        incidentId: workItemId,
+        componentId: component_id,
+        severity,
+        timestamp: Date.now(),
+  });
+}
   } catch (err) {
     console.error("❌ Error processing signal:", err);
     throw err;
