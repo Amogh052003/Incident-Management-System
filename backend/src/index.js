@@ -7,8 +7,13 @@ const { connectMongo } = require("./db/mongo");
 const eventBus = require("./core/events/eventBus");
 const redis = require("./db/redis");
 const { pgPool } = require("./db/postgres");
+const topologyRoutes = require("./api/topology.routes");
 const { loadPlugins } = require("./core/plugins/pluginRegistry");
+const {
+  initializeTopology,
+} = require("./core/topology/topologyServices");
 require("./core/events/eventHandlers");
+require("./core/topology/topologyEvents");
 // Fix for Node.js crypto compatibility with Mongoose
 global.crypto = require("crypto").webcrypto;
 
@@ -17,13 +22,14 @@ app.use(express.json());
 app.use("/workitem", workItemRoutes);
 app.use("/signal", rateLimiter, signalRoutes);
 app.use("/", dashboardRoutes);
+app.use("/", topologyRoutes);
 app.get("/health", (req, res) => {
     res.json({
       status: "OK",
       uptime: process.uptime(),
       timestamp: new Date(),
     });
-  });
+  }); 
 
 async function ensurePostgresSchema() {
   await pgPool.query(`
@@ -58,7 +64,7 @@ async function waitForPostgres(maxAttempts = 20, delayMs = 2000) {
 async function start() {
   await connectMongo();
   await waitForPostgres();
-
+  initializeTopology();
   await loadPlugins({
     redis,
     pgPool,

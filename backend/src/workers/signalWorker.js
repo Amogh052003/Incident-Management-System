@@ -1,12 +1,11 @@
 global.crypto = require("crypto").webcrypto;
-const eventBus = require("../core/events/eventBus");
-const EVENTS = require("../core/events/eventTypes");
 const { processSignal } = require("../services/signalService");
 const { connectMongo } = require("../db/mongo");
 const { getAndReset } = require("../utils/metrics");
 const RawSignal = require("../models/rawSignal");
 const redis = require("../db/redis");
-
+require("../core/events/eventHandlers");
+require("../core/topology/topologyEvents");
 async function startWorker() {
   await connectMongo();
 
