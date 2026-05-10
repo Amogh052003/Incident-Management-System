@@ -13,6 +13,7 @@ const {
   initializeTopology,
 } = require("./core/topology/topologyServices");
 require("./core/events/eventHandlers");
+require("./core/realtime/realtimeEvents");
 require("./core/topology/topologyEvents");
 // Fix for Node.js crypto compatibility with Mongoose
 global.crypto = require("crypto").webcrypto;
@@ -75,6 +76,12 @@ async function start() {
     console.log("API running");
   });
 
+  const {
+  initializeSocket,
+  } = require("./core/realtime/socketServer");
+
+  initializeSocket(server);
+  
   server.keepAliveTimeout = 5000;
   server.headersTimeout = 6000;
   server.maxConnections = 2000;
