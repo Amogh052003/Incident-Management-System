@@ -1,28 +1,23 @@
-const topology = {
-  "frontend-app": ["api-gateway"],
+const {
+  getResources,
+} = require("../resources/resourceRegistry");
 
-  "api-gateway": [
-    "auth-service",
-    "database-service",
-    "cache-layer",
-  ],
+function buildTopologyGraph() {
+  const resources =
+    getResources();
 
-  "auth-service": [
-    "database-service",
-  ],
+  const graph = {};
 
-  "worker-service": [
-    "redis",
-    "database-service",
-  ],
+  for (const resource of Object.values(
+    resources
+  )) {
+    graph[resource.id] =
+      resource.dependencies || [];
+  }
 
-  "cache-layer": [
-    "database-service",
-  ],
+  return graph;
+}
 
-  redis: [],
-
-  "database-service": [],
+module.exports = {
+  buildTopologyGraph,
 };
-
-module.exports = topology;

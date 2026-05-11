@@ -8,6 +8,7 @@ export default defineConfig({
     proxy: {
       "/incidents": "http://localhost:3000",
       "/workitem": "http://localhost:3000",
+      "/topology": "http://localhost:3000",
     },
   },
 });

@@ -55,6 +55,8 @@ services:
         condition: service_started
     restart: unless-stopped
     command: node src/index.js
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
 
   # ---------- Worker (scaled) ----------
   worker:

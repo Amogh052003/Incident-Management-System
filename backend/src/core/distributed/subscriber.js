@@ -1,32 +1,23 @@
 const redis = require("../../db/redis");
-
-const { getIO } = require("../realtime/socketServer");
+const eventBus = require("../events/eventBus");
+const EVENTS = require("../events/eventTypes");
 
 async function initializeSubscriber() {
   const subscriber = redis.duplicate();
 
-  await subscriber.connect();
+  await subscriber.subscribe("incident.created");
 
-  await subscriber.subscribe(
-    "incident.created",
-    async (message) => {
-      const payload = JSON.parse(message);
+  subscriber.on("message", (channel, message) => {
+    if (channel !== "incident.created") return;
 
-      console.log(
-        "[REDIS] Received incident.created"
-      );
+    const payload = JSON.parse(message);
 
-      const io = getIO();
+    console.log(
+      "[REDIS] Received incident.created"
+    );
 
-      if (io) {
-        io.emit("incident.created", payload);
-
-        console.log(
-          "[SOCKET] Broadcasted incident.created"
-        );
-      }
-    }
-  );
+    eventBus.emit(EVENTS.INCIDENT_CREATED, payload);
+  });
 
   console.log("[REDIS] Subscriber initialized");
 }

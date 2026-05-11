@@ -1,8 +1,8 @@
-const topology = require("./topologyGraph");
+const { buildTopologyGraph } = require("./topologyGraph");
 const topologyState = require("./topologyStore");
 
 function initializeTopology() {
-  for (const service of Object.keys(topology)) {
+  for (const service of Object.keys(buildTopologyGraph())) {
     topologyState[service] = {
       status: "healthy",
       incidents: [],
@@ -44,7 +44,7 @@ function getTopologyState() {
 }
 
 function getTopologyGraph() {
-  return topology;
+  return buildTopologyGraph();
 }
 
 module.exports = {

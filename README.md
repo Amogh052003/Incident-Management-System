@@ -4,6 +4,53 @@ A scalable, distributed Incident Management System designed to ingest high-volum
 
 ---
 
+# Problem Statement
+
+Modern engineering teams operate highly distributed systems composed of APIs, databases, workers, caches, authentication services, message queues, and third-party integrations. When failures occur, organizations often struggle to quickly identify the root cause, understand the blast radius, coordinate response efforts, and communicate operational impact across teams.
+
+Existing monitoring solutions primarily focus on metrics, logs, and alerts independently, but they frequently lack:
+
+* centralized operational incident correlation,
+* topology-aware impact visualization,
+* realtime dependency propagation,
+* integrated incident workflows,
+* extensible automation pipelines,
+* and self-hosted lightweight operational control planes.
+
+As systems scale, a single infrastructure failure can cascade across multiple services, causing downstream outages and degraded user experience. Engineers are forced to manually correlate logs, alerts, dashboards, and tickets across fragmented tools such as Grafana, GitHub, Jira, Slack, Prometheus, and cloud monitoring systems.
+
+This results in:
+
+* slow incident response,
+* delayed root cause analysis,
+* alert fatigue,
+* operational blind spots,
+* and increased Mean Time To Resolution (MTTR).
+
+There is a need for a lightweight, extensible, self-hosted Incident Management and Operational Intelligence Platform that can:
+
+* ingest and correlate operational signals,
+* model infrastructure/service dependencies,
+* visualize realtime system health,
+* propagate impact across service topology,
+* automate workflows through plugins,
+* integrate with existing engineering tools,
+* and provide a centralized operational response interface.
+
+The platform should support:
+
+* realtime incident tracking,
+* distributed event processing,
+* plugin-based integrations,
+* operational topology visualization,
+* alert orchestration,
+* audit logging,
+* and deployment through Docker Compose or Kubernetes Helm charts for easy self-hosting.
+
+The goal is to provide engineering teams with a unified operational intelligence layer that transforms raw infrastructure signals into actionable operational awareness.
+
+---
+
 # Overview
 
 Modern distributed systems generate thousands of signals (errors, latency spikes, failures). This system simulates a production-grade pipeline that:

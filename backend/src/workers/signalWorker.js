@@ -6,8 +6,12 @@ const RawSignal = require("../models/rawSignal");
 const redis = require("../db/redis");
 require("../core/events/eventHandlers");
 require("../core/topology/topologyEvents");
+const {
+  initializeTopology,
+} = require("../core/topology/topologyServices");
 async function startWorker() {
   await connectMongo();
+  initializeTopology();
 
   console.log(" Worker started");
 

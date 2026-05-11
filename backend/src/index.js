@@ -1,3 +1,4 @@
+const cors = require("cors");
 const express = require("express");
 const signalRoutes = require("./api/signal.routes");
 const workItemRoutes = require("./api/workitem.routes");
@@ -8,6 +9,12 @@ const eventBus = require("./core/events/eventBus");
 const redis = require("./db/redis");
 const { pgPool } = require("./db/postgres");
 const topologyRoutes = require("./api/topology.routes");
+const {
+  bootstrapResources,
+} = require("./core/resources/bootstrapResources");
+const {
+  bootstrapDiscovery,
+} = require("./core/discovery/bootstrapDiscovery");
 const { loadPlugins } = require("./core/plugins/pluginRegistry");
 const {
   initializeTopology,
@@ -19,6 +26,9 @@ require("./core/topology/topologyEvents");
 global.crypto = require("crypto").webcrypto;
 
 const app = express();
+
+app.use(cors());
+
 app.use(express.json());
 app.use("/workitem", workItemRoutes);
 app.use("/signal", rateLimiter, signalRoutes);
@@ -65,7 +75,15 @@ async function waitForPostgres(maxAttempts = 20, delayMs = 2000) {
 async function start() {
   await connectMongo();
   await waitForPostgres();
+  bootstrapResources();
+  await bootstrapDiscovery();
   initializeTopology();
+
+  const {
+    initializeSubscriber,
+  } = require("./core/distributed/subscriber");
+  initializeSubscriber().catch(console.error);
+
   await loadPlugins({
     redis,
     pgPool,
