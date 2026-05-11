@@ -15,6 +15,9 @@ const {
 const {
   bootstrapDiscovery,
 } = require("./core/discovery/bootstrapDiscovery");
+const {
+  initializeRuntimeMonitor,
+} = require("./core/discovery/runtimeMonitor");
 const { loadPlugins } = require("./core/plugins/pluginRegistry");
 const {
   initializeTopology,
@@ -78,6 +81,7 @@ async function start() {
   bootstrapResources();
   await bootstrapDiscovery();
   initializeTopology();
+  await initializeRuntimeMonitor();
 
   const {
     initializeSubscriber,

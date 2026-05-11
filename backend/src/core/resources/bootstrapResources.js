@@ -8,6 +8,8 @@ function bootstrapResources() {
 
     type: "frontend",
 
+    runtimeSelector: "frontend",
+
     dependencies: [
       "api-gateway",
     ],
@@ -17,6 +19,8 @@ function bootstrapResources() {
     id: "api-gateway",
 
     type: "api",
+
+    runtimeSelector: "backend",
 
     dependencies: [
       "auth-service",
@@ -30,6 +34,8 @@ function bootstrapResources() {
 
     type: "service",
 
+    runtimeSelector: "auth",
+
     dependencies: [
       "database-service",
     ],
@@ -40,6 +46,8 @@ function bootstrapResources() {
 
     type: "database",
 
+    runtimeSelector: "postgres",
+
     dependencies: [],
   });
 
@@ -47,6 +55,8 @@ function bootstrapResources() {
     id: "cache-layer",
 
     type: "cache",
+
+    runtimeSelector: "redis",
 
     dependencies: [],
   });

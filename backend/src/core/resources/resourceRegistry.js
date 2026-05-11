@@ -44,8 +44,39 @@ function getResources() {
   return resources;
 }
 
+function linkRuntimeInstance(
+  resourceId,
+  instanceId
+) {
+  if (!resources[resourceId]) {
+    console.warn(
+      `[RESOURCE] Cannot link — unknown resource ${resourceId}`
+    );
+    return;
+  }
+
+  if (!resources[resourceId].runtimeInstances) {
+    resources[resourceId].runtimeInstances = [];
+  }
+
+  if (
+    !resources[resourceId].runtimeInstances.includes(
+      instanceId
+    )
+  ) {
+    resources[resourceId].runtimeInstances.push(
+      instanceId
+    );
+
+    console.log(
+      `[RESOURCE] Linked ${instanceId} → ${resourceId}`
+    );
+  }
+}
+
 module.exports = {
   registerResource,
   updateResourceHealth,
   getResources,
+  linkRuntimeInstance,
 };

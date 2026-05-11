@@ -1,4 +1,8 @@
 const { buildTopologyGraph } = require("./topologyGraph");
+const {
+  getResources,
+  updateResourceHealth,
+} = require("../resources/resourceRegistry");
 const topologyState = require("./topologyStore");
 
 function initializeTopology() {
@@ -20,6 +24,7 @@ function markServiceDegraded(service, incidentId) {
   }
 
   topologyState[service].status = "degraded";
+  updateResourceHealth(service, "degraded");
 
   if (!topologyState[service].incidents.includes(incidentId)) {
     topologyState[service].incidents.push(incidentId);
@@ -37,10 +42,22 @@ function markServiceHealthy(service) {
   topologyState[service].status = "healthy";
   topologyState[service].incidents = [];
   topologyState[service].lastUpdated = new Date();
+  updateResourceHealth(service, "healthy");
 }
 
 function getTopologyState() {
-  return topologyState;
+  const resources = getResources();
+  const state = {};
+
+  for (const [id, resource] of Object.entries(resources)) {
+    state[id] = {
+      status: resource.health?.status || "unknown",
+      incidents: resource.incidents || [],
+      lastUpdated: resource.health?.updatedAt || null,
+    };
+  }
+
+  return state;
 }
 
 function getTopologyGraph() {

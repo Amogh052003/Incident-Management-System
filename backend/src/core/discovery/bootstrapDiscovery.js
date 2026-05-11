@@ -4,36 +4,74 @@ const {
 
 const {
   registerResource,
+  getResources,
+  linkRuntimeInstance,
 } = require(
   "../resources/resourceRegistry"
 );
+
+function matchContainerToResource(
+  containerName,
+  resources
+) {
+  for (const [id, resource] of Object.entries(
+    resources
+  )) {
+    if (!resource.runtimeSelector) continue;
+
+    const selector =
+      resource.runtimeSelector;
+
+    if (containerName.includes(selector)) {
+      return id;
+    }
+  }
+
+  return null;
+}
 
 async function bootstrapDiscovery() {
   const containers =
     await discoverContainers();
 
+  const logicalResources =
+    getResources();
+
   for (const container of containers) {
-    registerResource({
-      id: container.name,
+    const matchedId =
+      matchContainerToResource(
+        container.name,
+        logicalResources
+      );
 
-      type: "container",
+    if (matchedId) {
+      linkRuntimeInstance(
+        matchedId,
+        container.name
+      );
+    } else {
+      registerResource({
+        id: container.name,
 
-      runtime: "docker",
+        type: "container",
 
-      metadata: {
-        image: container.image,
-      },
+        runtime: "docker",
 
-      health: {
-        status:
-          container.state ===
-          "running"
-            ? "healthy"
-            : "degraded",
-      },
+        metadata: {
+          image: container.image,
+        },
 
-      dependencies: [],
-    });
+        health: {
+          status:
+            container.state ===
+            "running"
+              ? "healthy"
+              : "degraded",
+        },
+
+        dependencies: [],
+      });
+    }
   }
 
   console.log(
