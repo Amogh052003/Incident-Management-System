@@ -200,7 +200,7 @@ async function processSignal(signal) {
 
   } catch (err) {
     console.error(
-      "❌ Error processing signal:",
+      " Error processing signal:",
       err
     );
 

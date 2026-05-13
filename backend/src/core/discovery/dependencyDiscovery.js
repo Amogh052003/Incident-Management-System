@@ -8,6 +8,10 @@ const {
   resolveIdentity,
 } = require("./identityResolver");
 
+const {
+  addDependency,
+} = require("../topology/dependencyStore");
+
 const docker = new Docker({
   socketPath:
     "/var/run/docker.sock",
@@ -97,6 +101,10 @@ async function discoverDependencies() {
         resolved !== sourceResource
       ) {
         inferred.add(resolved);
+        addDependency(
+          sourceResource,
+          resolved
+        );
       }
     }
 

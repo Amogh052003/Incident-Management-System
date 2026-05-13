@@ -80,9 +80,9 @@ async function waitForPostgres(maxAttempts = 20, delayMs = 2000) {
 
 async function start() {
   await connectMongo();
+  bootstrapResources();
   await bootstrapDiscovery();
   await waitForPostgres();
-  bootstrapResources();
   initializeTopology();
   await initializeRuntimeMonitor();
   await discoverDependencies();

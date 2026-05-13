@@ -7,11 +7,15 @@ const redis = require("../db/redis");
 require("../core/events/eventHandlers");
 require("../core/topology/topologyEvents");
 const {
+  bootstrapResources,
+} = require(
+  "../core/resources/bootstrapResources"
+);
+const {
   initializeTopology,
 } = require("../core/topology/topologyServices");
 async function startWorker() {
   await connectMongo();
-  initializeTopology();
 
   console.log(" Worker started");
 
@@ -54,5 +58,8 @@ async function startWorker() {
     }
   }
 }
+
+bootstrapResources();
+initializeTopology();
 
 startWorker();

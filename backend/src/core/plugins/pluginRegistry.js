@@ -1,7 +1,27 @@
-const pluginManager = require("./pluginManager");
+const pluginManager = require(
+  "./pluginManager"
+);
 
-async function loadPlugins(ctx) {
-  await pluginManager.initAll(ctx);
+const SlackPlugin = require(
+  "../../plugins/slack/SlackPlugin"
+);
+
+async function loadPlugins(
+  ctx
+) {
+  pluginManager.register(
+    new SlackPlugin({
+      webhookUrl:
+        process.env
+          .SLACK_WEBHOOK_URL,
+    })
+  );
+
+  await pluginManager.initAll(
+    ctx
+  );
 }
 
-module.exports = { loadPlugins };
+module.exports = {
+  loadPlugins,
+};

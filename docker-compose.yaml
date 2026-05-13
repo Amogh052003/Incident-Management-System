@@ -46,6 +46,7 @@ services:
       PGDATABASE: ims_db
       PGPORT: 5432
       MONGO_URL: mongodb://mongo:27017/ims
+      SLACK_WEBHOOK_URL: "${SLACK_WEBHOOK_URL}"
     depends_on:
       postgres:
         condition: service_healthy
