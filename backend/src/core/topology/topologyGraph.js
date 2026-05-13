@@ -11,8 +11,15 @@ function buildTopologyGraph() {
   for (const resource of Object.values(
     resources
   )) {
-    graph[resource.id] =
-      resource.dependencies || [];
+    graph[resource.id] = [
+      ...(resource
+        .declaredDependencies ||
+        []),
+
+      ...(resource
+        .inferredDependencies ||
+        []),
+    ];
   }
 
   return graph;

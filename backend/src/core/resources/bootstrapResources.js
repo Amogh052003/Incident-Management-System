@@ -10,8 +10,9 @@ function bootstrapResources() {
 
     runtimeSelector: "frontend",
 
-    dependencies: [
-      "api-gateway",
+    runtimeAliases: [
+      "frontend",
+      "frontend-app",
     ],
   });
 
@@ -22,10 +23,10 @@ function bootstrapResources() {
 
     runtimeSelector: "backend",
 
-    dependencies: [
-      "auth-service",
-      "database-service",
-      "cache-layer",
+    runtimeAliases: [
+      "backend",
+      "api",
+      "api-gateway",
     ],
   });
 
@@ -36,8 +37,9 @@ function bootstrapResources() {
 
     runtimeSelector: "auth",
 
-    dependencies: [
-      "database-service",
+    runtimeAliases: [
+      "auth",
+      "auth-service",
     ],
   });
 
@@ -48,7 +50,11 @@ function bootstrapResources() {
 
     runtimeSelector: "postgres",
 
-    dependencies: [],
+    runtimeAliases: [
+      "postgres",
+      "db",
+      "database-service",
+    ],
   });
 
   registerResource({
@@ -58,7 +64,11 @@ function bootstrapResources() {
 
     runtimeSelector: "redis",
 
-    dependencies: [],
+    runtimeAliases: [
+      "redis",
+      "cache",
+      "cache-layer",
+    ],
   });
 }
 

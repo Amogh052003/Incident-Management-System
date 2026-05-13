@@ -3,8 +3,14 @@ const {
   registerResource,
   getResources,
   linkRuntimeInstance,
-  updateResourceHealth,
 } = require("../resources/resourceRegistry");
+const {
+  propagateImpact,
+} = require("../topology/impactPropagation");
+const {
+  transitionResource,
+  RESOURCE_STATUS,
+} = require("../registry/resourceLifecycle");
 
 const docker = new Docker({
   socketPath: "/var/run/docker.sock",
@@ -56,6 +62,14 @@ async function handleContainerEvent(event) {
   if (action === "start") {
     if (matchedId) {
       linkRuntimeInstance(matchedId, containerName);
+
+      const resource = resources[matchedId];
+      if (resource) {
+        transitionResource(
+          resource,
+          RESOURCE_STATUS.HEALTHY
+        );
+      }
     } else {
       registerResource({
         id: containerName,
@@ -81,11 +95,22 @@ async function handleContainerEvent(event) {
     action === "kill"
   ) {
     if (matchedId) {
-      updateResourceHealth(matchedId, "degraded");
+      const resource = resources[matchedId];
+      if (resource) {
+        transitionResource(
+          resource,
+          RESOURCE_STATUS.DEGRADED
+        );
+        propagateImpact(matchedId);
+      }
     }
 
     if (resources[containerName]) {
-      updateResourceHealth(containerName, "degraded");
+      transitionResource(
+        resources[containerName],
+        RESOURCE_STATUS.DEGRADED
+      );
+      propagateImpact(containerName);
     }
   }
 }

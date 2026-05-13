@@ -18,6 +18,9 @@ const {
 const {
   initializeRuntimeMonitor,
 } = require("./core/discovery/runtimeMonitor");
+const {
+  discoverDependencies,
+} = require("./core/discovery/dependencyDiscovery");
 const { loadPlugins } = require("./core/plugins/pluginRegistry");
 const {
   initializeTopology,
@@ -77,11 +80,12 @@ async function waitForPostgres(maxAttempts = 20, delayMs = 2000) {
 
 async function start() {
   await connectMongo();
+  await bootstrapDiscovery();
   await waitForPostgres();
   bootstrapResources();
-  await bootstrapDiscovery();
   initializeTopology();
   await initializeRuntimeMonitor();
+  await discoverDependencies();
 
   const {
     initializeSubscriber,
