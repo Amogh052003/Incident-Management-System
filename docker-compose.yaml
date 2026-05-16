@@ -29,6 +29,8 @@ services:
     image: mongo:6
     ports:
       - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
     restart: unless-stopped
 
   # ---------- Backend API ----------
@@ -47,6 +49,10 @@ services:
       PGPORT: 5432
       MONGO_URL: mongodb://mongo:27017/ims
       SLACK_WEBHOOK_URL: "${SLACK_WEBHOOK_URL}"
+      GITHUB_APP_ID: ${GITHUB_APP_ID}
+      GITHUB_PRIVATE_KEY: ${GITHUB_PRIVATE_KEY}
+      GITHUB_APP_INSTALL_URL: ${GITHUB_APP_INSTALL_URL}
+      GITHUB_WEBHOOK_SECRET: ${GITHUB_WEBHOOK_SECRET}
     depends_on:
       postgres:
         condition: service_healthy
@@ -92,3 +98,6 @@ services:
     depends_on:
       - backend
     restart: unless-stopped
+
+volumes:
+  mongo_data:

@@ -30,7 +30,7 @@ function extractHost(value) {
   return match?.[1] || null;
 }
 
-async function discoverDependencies() {
+async function discoverDependencies(k8sPods) {
   console.log(
     "[DISCOVERY] Discovering dependencies"
   );
@@ -114,9 +114,41 @@ async function discoverDependencies() {
       Array.from(inferred);
 
     console.log(
-      `[DISCOVERY] ${sourceResource} ->`,
+      `[DISCOVERY] Docker: ${sourceResource} ->`,
       Array.from(inferred)
     );
+  }
+
+  if (k8sPods && k8sPods.length > 0) {
+    console.log("[DISCOVERY] Discovering K8s pod dependencies");
+
+    for (const pod of k8sPods) {
+      const sourceResource = resources[pod.name] ? pod.name : null;
+      if (!sourceResource) continue;
+
+      const inferred = new Set();
+
+      for (const container of pod.containers) {
+        const envVars = container.env || [];
+        for (const envVar of envVars) {
+          const host = extractHost(envVar.value);
+          if (!host) continue;
+
+          const resolved = resolveIdentity(host);
+          if (resolved && resolved !== sourceResource) {
+            inferred.add(resolved);
+            addDependency(sourceResource, resolved);
+          }
+        }
+      }
+
+      if (inferred.size > 0) {
+        console.log(
+          `[DISCOVERY] K8s: ${sourceResource} ->`,
+          Array.from(inferred)
+        );
+      }
+    }
   }
 }
 

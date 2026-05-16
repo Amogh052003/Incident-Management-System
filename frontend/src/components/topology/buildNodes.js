@@ -1,27 +1,43 @@
+import dagre from "dagre";
 import { STATUS_COLORS } from "./statusColors";
 
-export function buildNodes(state = {}) {
-  return Object.entries(state).map(
-    ([service, data], index) => ({
-      id: service,
+const NODE_WIDTH = 180;
+const NODE_HEIGHT = 50;
 
-      data: {
-        label: service,
-      },
+export function buildNodes(state = {}, graph = {}) {
+  const g = new dagre.graphlib.Graph();
+  g.setGraph({ rankdir: "LR", nodesep: 40, ranksep: 150, marginx: 40, marginy: 40 });
+  g.setDefaultEdgeLabel(() => ({}));
 
+  Object.keys(state).forEach((id) => {
+    g.setNode(id, { width: NODE_WIDTH, height: NODE_HEIGHT });
+  });
+
+  Object.entries(graph).forEach(([source, targets]) => {
+    targets.forEach((target) => {
+      g.setEdge(target, source);
+    });
+  });
+
+  dagre.layout(g);
+
+  return Object.keys(state).map((id) => {
+    const node = g.node(id);
+    return {
+      id,
+      data: { label: id },
       position: {
-        x: 250 * (index % 3),
-        y: 150 * Math.floor(index / 3),
+        x: node.x - NODE_WIDTH / 2,
+        y: node.y - NODE_HEIGHT / 2,
       },
-
       style: {
-        background: STATUS_COLORS[data.status] || STATUS_COLORS.unknown,
+        background: STATUS_COLORS[state[id]?.status] || STATUS_COLORS.unknown,
         color: "white",
         border: "1px solid #1f2937",
         borderRadius: 12,
         padding: 10,
-        width: 180,
+        width: NODE_WIDTH,
       },
-    })
-  );
+    };
+  });
 }

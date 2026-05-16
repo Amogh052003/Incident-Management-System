@@ -1,37 +1,19 @@
 import { useEffect } from "react";
-
 import { io } from "socket.io-client";
 
-export function useTopologyRealtime(
-  setNodes,
-  buildNodes
-) {
+const SOCKET_URL = window.location.origin;
+
+export function useTopologyRealtime(setNodes, setEdges, buildNodes, buildEdges) {
   useEffect(() => {
-    const socket = io(
-      "http://localhost:3000"
-    );
+    const socket = io(SOCKET_URL, { transports: ["websocket", "polling"] });
 
-    socket.on(
-      "incident.created",
-      async () => {
-        console.log(
-          "[SOCKET] incident.created"
-        );
+    socket.on("incident.created", async () => {
+      const response = await fetch("/topology");
+      const data = await response.json();
+      setNodes(buildNodes(data.state, data.graph));
+      setEdges(buildEdges(data.graph));
+    });
 
-        const response = await fetch(
-          "http://localhost:3000/topology"
-        );
-
-        const data = await response.json();
-
-        setNodes(
-          buildNodes(data.state)
-        );
-      }
-    );
-
-    return () => {
-      socket.disconnect();
-    };
+    return () => socket.disconnect();
   }, []);
 }

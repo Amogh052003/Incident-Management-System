@@ -75,8 +75,18 @@ async function bootstrapDiscovery() {
   }
 
   console.log(
-    `[DISCOVERY] Registered ${containers.length} containers`
+    `[DISCOVERY] Registered ${containers.length} Docker containers`
   );
+
+  let k8sData = null;
+  try {
+    const { bootstrapK8sDiscovery } = require("./kubernetes/bootstrapDiscovery");
+    k8sData = await bootstrapK8sDiscovery();
+  } catch (err) {
+    console.warn("[DISCOVERY] K8s discovery skipped:", err.message);
+  }
+
+  return k8sData;
 }
 
 module.exports = {

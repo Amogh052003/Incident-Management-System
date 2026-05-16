@@ -1,28 +1,18 @@
 const {
   discoverCluster,
-} = require(
-  "./kubernetes/k8sDiscovery"
-);
+} = require("./K8sDiscovery");
 
-async function bootstrapDiscovery() {
-  if (
-    process.env
-      .KUBERNETES_SERVICE_HOST
-  ) {
-    console.log(
-      "[DISCOVERY] Kubernetes mode"
-    );
-
-    return await discoverCluster();
+async function bootstrapK8sDiscovery() {
+  try {
+    const data = await discoverCluster();
+    console.log(`[K8S] Discovered ${data.pods.length} pods, ${data.services.length} services, ${data.deployments.length} deployments`);
+    return data;
+  } catch (err) {
+    console.warn("[K8S] Discovery failed (K8s may not be available):", err.message);
+    return { pods: [], services: [], deployments: [] };
   }
-
-  console.log(
-    "[DISCOVERY] Local kubeconfig mode"
-  );
-
-  return await discoverCluster();
 }
 
 module.exports = {
-  bootstrapDiscovery,
+  bootstrapK8sDiscovery,
 };

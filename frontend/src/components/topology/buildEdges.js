@@ -5,9 +5,9 @@ export function buildEdges(graph = {}) {
     ([source, targets]) => {
       targets.forEach((target) => {
         edges.push({
-          id: `${source}-${target}`,
-          source,
-          target,
+          id: `${target}->${source}`,
+          source: target,
+          target: source,
           animated: true,
         });
       });

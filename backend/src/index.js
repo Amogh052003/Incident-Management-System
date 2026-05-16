@@ -28,18 +28,22 @@ const {
 require("./core/events/eventHandlers");
 require("./core/realtime/realtimeEvents");
 require("./core/topology/topologyEvents");
-// Fix for Node.js crypto compatibility with Mongoose
 global.crypto = require("crypto").webcrypto;
 
 const app = express();
 
 app.use(cors());
-
 app.use(express.json());
 app.use("/workitem", workItemRoutes);
 app.use("/signal", rateLimiter, signalRoutes);
 app.use("/", dashboardRoutes);
 app.use("/", topologyRoutes);
+app.use("/", require("./api/plugins.routes"));
+app.use("/", require("./api/integrations.routes"));
+app.use("/", require("./api/settings.routes"));
+app.use("/", require("./api/audit.routes"));
+app.use("/", require("./api/github.routes"));
+app.use("/", require("./api/repoMapping.routes"));
 app.get("/health", (req, res) => {
     res.json({
       status: "OK",
@@ -49,15 +53,60 @@ app.get("/health", (req, res) => {
   }); 
 
 async function ensurePostgresSchema() {
-  await pgPool.query(`
-    CREATE TABLE IF NOT EXISTS work_item_logs (
+  const tables = [
+    `CREATE TABLE IF NOT EXISTS work_item_logs (
       id SERIAL PRIMARY KEY,
       work_item_id INTEGER NOT NULL REFERENCES work_items(id),
       status TEXT,
       rca JSONB,
       changed_at TIMESTAMP NOT NULL DEFAULT NOW()
-    );
-  `);
+    )`,
+    `CREATE TABLE IF NOT EXISTS plugins (
+      id SERIAL PRIMARY KEY,
+      name TEXT NOT NULL UNIQUE,
+      status TEXT DEFAULT 'active',
+      config JSONB DEFAULT '{}',
+      icon TEXT,
+      subscribed_events JSONB DEFAULT '[]',
+      created_at TIMESTAMP DEFAULT NOW(),
+      updated_at TIMESTAMP DEFAULT NOW()
+    )`,
+    `CREATE TABLE IF NOT EXISTS plugin_activity (
+      id SERIAL PRIMARY KEY,
+      plugin_name TEXT NOT NULL,
+      action TEXT NOT NULL,
+      details TEXT,
+      created_at TIMESTAMP DEFAULT NOW()
+    )`,
+    `CREATE TABLE IF NOT EXISTS integrations (
+      id SERIAL PRIMARY KEY,
+      name TEXT NOT NULL UNIQUE,
+      status TEXT DEFAULT 'pending',
+      config JSONB DEFAULT '{}',
+      created_at TIMESTAMP DEFAULT NOW(),
+      updated_at TIMESTAMP DEFAULT NOW()
+    )`,
+    `CREATE TABLE IF NOT EXISTS settings (
+      id SERIAL PRIMARY KEY,
+      key TEXT NOT NULL UNIQUE,
+      value TEXT NOT NULL,
+      category TEXT DEFAULT 'general',
+      created_at TIMESTAMP DEFAULT NOW(),
+      updated_at TIMESTAMP DEFAULT NOW()
+    )`,
+    `CREATE TABLE IF NOT EXISTS audit_logs (
+      id SERIAL PRIMARY KEY,
+      event_type TEXT NOT NULL,
+      component TEXT,
+      severity TEXT,
+      message TEXT,
+      metadata JSONB DEFAULT '{}',
+      created_at TIMESTAMP DEFAULT NOW()
+    )`,
+  ];
+  for (const sql of tables) {
+    await pgPool.query(sql);
+  }
 }
 
 async function waitForPostgres(maxAttempts = 20, delayMs = 2000) {
@@ -70,9 +119,7 @@ async function waitForPostgres(maxAttempts = 20, delayMs = 2000) {
       console.warn(
         `[postgres] not ready (attempt ${attempt}/${maxAttempts}): ${err.message}`
       );
-      if (isLastAttempt) {
-        throw err;
-      }
+      if (isLastAttempt) throw err;
       await new Promise((resolve) => setTimeout(resolve, delayMs));
     }
   }
@@ -81,11 +128,29 @@ async function waitForPostgres(maxAttempts = 20, delayMs = 2000) {
 async function start() {
   await connectMongo();
   bootstrapResources();
-  await bootstrapDiscovery();
+  const k8sData = await bootstrapDiscovery();
   await waitForPostgres();
+
+  const { seedPlugins } = require("./services/pluginService");
+  const { seedIntegrations } = require("./services/integrationService");
+  const { seedSettings } = require("./services/settingsService");
+  await seedPlugins();
+  await seedIntegrations();
+  await seedSettings();
+
   initializeTopology();
   await initializeRuntimeMonitor();
-  await discoverDependencies();
+  await discoverDependencies(k8sData?.pods);
+
+  const { initializeK8sRuntimeMonitor } = require("./core/discovery/kubernetes/k8sRuntimeMonitor");
+  initializeK8sRuntimeMonitor();
+
+  const {
+    discoverAnnotationsFromCluster,
+  } = require("./core/discovery/annotationDiscovery");
+  if (k8sData) {
+    await discoverAnnotationsFromCluster(k8sData).catch(console.error);
+  }
 
   const {
     initializeSubscriber,
@@ -107,7 +172,7 @@ async function start() {
   } = require("./core/realtime/socketServer");
 
   initializeSocket(server);
-  
+
   server.keepAliveTimeout = 5000;
   server.headersTimeout = 6000;
   server.maxConnections = 2000;

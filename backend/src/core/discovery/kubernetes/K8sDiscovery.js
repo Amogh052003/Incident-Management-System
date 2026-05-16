@@ -1,40 +1,115 @@
 const {
   k8sApi,
   appsApi,
-} = require("./k8sClient");
+  clusterReady,
+} = require("./K8sClient");
+
+const {
+  registerResource,
+  getResources,
+  linkRuntimeInstance,
+} = require("../../resources/resourceRegistry");
+
+function matchPodToResource(podName, resources) {
+  for (const [id, resource] of Object.entries(resources)) {
+    if (!resource.runtimeSelector) continue;
+    if (podName.includes(resource.runtimeSelector)) {
+      return id;
+    }
+  }
+  return null;
+}
 
 async function discoverCluster() {
-  console.log(
-    "[K8S] Discovering cluster"
-  );
+  if (!clusterReady) {
+    return { pods: [], services: [], deployments: [] };
+  }
 
-  const pods =
-    await k8sApi.listPodForAllNamespaces();
+  console.log("[K8S] Discovering cluster");
 
-  const services =
-    await k8sApi.listServiceForAllNamespaces();
+  const [podsRes, servicesRes, deploymentsRes] = await Promise.all([
+    k8sApi.listPodForAllNamespaces(),
+    k8sApi.listServiceForAllNamespaces(),
+    appsApi.listDeploymentForAllNamespaces(),
+  ]);
 
-  const deployments =
-    await appsApi.listDeploymentForAllNamespaces();
+  const pods = podsRes.body.items;
+  const services = servicesRes.body.items;
+  const deployments = deploymentsRes.body.items;
 
-  console.log(
-    `[K8S] Pods: ${pods.body.items.length}`
-  );
+  console.log(`[K8S] Pods: ${pods.length}, Services: ${services.length}, Deployments: ${deployments.length}`);
 
-  console.log(
-    `[K8S] Services: ${services.body.items.length}`
-  );
+  const logicalResources = getResources();
 
-  console.log(
-    `[K8S] Deployments: ${deployments.body.items.length}`
-  );
+  for (const svc of services) {
+    const svcName = svc.metadata.name;
+    const svcNamespace = svc.metadata.namespace;
+
+    if (!logicalResources[svcName]) {
+      registerResource({
+        id: svcName,
+        type: "service",
+        runtime: "kubernetes",
+        runtimeSelector: null,
+        runtimeAliases: [svcName, `${svcName}.${svcNamespace}`],
+        metadata: {
+          namespace: svcNamespace,
+          labels: svc.metadata.labels || {},
+        },
+        health: { status: "healthy" },
+        dependencies: [],
+      });
+    }
+  }
+
+  const discoveredPods = [];
+
+  for (const pod of pods) {
+    const podName = pod.metadata.name;
+    const namespace = pod.metadata.namespace;
+    const phase = pod.status.phase;
+    const isRunning = phase === "Running";
+
+    const matchedId = matchPodToResource(podName, logicalResources);
+
+    if (matchedId) {
+      linkRuntimeInstance(matchedId, podName);
+    } else {
+      registerResource({
+        id: podName,
+        type: "container",
+        runtime: "kubernetes",
+        runtimeSelector: null,
+        runtimeAliases: [podName],
+        metadata: {
+          namespace,
+          image: pod.spec.containers[0]?.image || "unknown",
+          labels: pod.metadata.labels || {},
+        },
+        health: {
+          status: isRunning ? "healthy" : "degraded",
+        },
+        dependencies: [],
+      });
+    }
+
+    discoveredPods.push({
+      name: podName,
+      namespace,
+      phase,
+      containers: pod.spec.containers.map((c) => ({
+        name: c.name,
+        image: c.image,
+        env: c.env || [],
+      })),
+    });
+  }
 
   return {
-    pods: pods.body.items,
-    services:
-      services.body.items,
-    deployments:
-      deployments.body.items,
+    pods: discoveredPods,
+    rawPods: pods,
+    services,
+    deployments,
   };
 }
 
