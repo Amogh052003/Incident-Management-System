@@ -45,6 +45,7 @@ app.use("/", require("./api/audit.routes"));
 app.use("/", require("./api/github.routes"));
 app.use("/", require("./api/repoMapping.routes"));
 app.use("/", require("./api/services.routes"));
+app.use("/", require("./api/logs.routes"));
 app.get("/health", (req, res) => {
     res.json({
       status: "OK",

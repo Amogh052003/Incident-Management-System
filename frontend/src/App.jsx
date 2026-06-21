@@ -9,7 +9,6 @@ import RCAView from "./views/RCAView";
 import PluginsView from "./views/PluginsView";
 import GitHubView from "./views/GitHubView";
 import IntegrationsView from "./views/IntegrationsView";
-import AuditView from "./views/AuditView";
 import SettingsView from "./views/SettingsView";
 import { useIncidents } from "./hooks/useIncidents";
 
@@ -34,7 +33,6 @@ export default function App() {
       case "github": return <GitHubView />;
       case "plugins": return <PluginsView />;
       case "integrations": return <IntegrationsView />;
-      case "audit": return <AuditView />;
       case "settings": return <SettingsView />;
       default: return <Overview />;
     }

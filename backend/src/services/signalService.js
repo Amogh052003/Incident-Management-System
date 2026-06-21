@@ -103,10 +103,13 @@ async function processSignal(signal) {
     // Store Signal
     // --------------------------------------------------
 
+    const severity = triggerAlert(signal);
+
     await retry(() =>
       Signal.create({
         component_id,
         message,
+        severity,
         work_item_id: workItemId,
         timestamp: new Date(),
       })
@@ -120,7 +123,6 @@ async function processSignal(signal) {
     // Alerting + Metrics
     // --------------------------------------------------
 
-    const severity = triggerAlert(signal);
 
     const now = new Date();
 
@@ -165,29 +167,20 @@ async function processSignal(signal) {
 
     increment();
 
-    // --------------------------------------------------
-    // Domain Events
-    // --------------------------------------------------
+    const payload = {
+      incidentId: workItemId,
+      componentId: component_id,
+      severity,
+      message,
+      timestamp: Date.now(),
+    };
+
+    eventBus.emit(EVENTS.SIGNAL_INGESTED, payload);
+    await publish("signal.ingested", payload);
 
     if (incidentCreated) {
-      const payload = {
-        incidentId: workItemId,
-        componentId: component_id,
-        severity,
-        timestamp: Date.now(),
-      };
-
-      // Local in-process events
-      eventBus.emit(
-        EVENTS.INCIDENT_CREATED,
-        payload
-      );
-
-      // Distributed cross-runtime events
-      await publish(
-        "incident.created",
-        payload
-      );
+      eventBus.emit(EVENTS.INCIDENT_CREATED, payload);
+      await publish("incident.created", payload);
     }
 
   } catch (err) {

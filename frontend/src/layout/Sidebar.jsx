@@ -7,7 +7,6 @@ import {
   GitPullRequest,
   Puzzle,
   Link,
-  ClipboardList,
   Settings,
 } from "lucide-react";
 
@@ -27,7 +26,6 @@ const NAV_ITEMS = [
   { icon: GithubIcon, label: "GitHub", view: "github" },
   { icon: Puzzle, label: "Plugins", view: "plugins" },
   { icon: Link, label: "Integrations", view: "integrations" },
-  { icon: ClipboardList, label: "Audit Logs", view: "audit" },
   { icon: Settings, label: "Settings", view: "settings" },
 ];
 
