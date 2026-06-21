@@ -184,11 +184,6 @@ router.get("/github/issues/:incidentId", async (req, res) => {
 });
 
 router.post("/github/webhook", async (req, res) => {
-  console.log("=================================");
-  console.log("GITHUB WEBHOOK RECEIVED");
-  console.log("HEADERS:", req.headers);
-  console.log("BODY:", req.body);
-  console.log("=================================");
   try {
     const signature = req.headers["x-hub-signature-256"];
     const event = req.headers["x-github-event"];

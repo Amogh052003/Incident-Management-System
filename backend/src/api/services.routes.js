@@ -12,7 +12,8 @@ const router = express.Router();
 async function getDockerContainers() {
   try {
     return await docker.listContainers({ all: true });
-  } catch {
+  } catch (err) {
+    console.warn("Failed to list Docker containers:", err.message);
     return [];
   }
 }
@@ -21,7 +22,8 @@ async function getK8sPods() {
   try {
     const res = await k8sApi.listPodForAllNamespaces();
     return res.items || [];
-  } catch {
+  } catch (err) {
+    console.warn("Failed to list K8s pods:", err.message);
     return [];
   }
 }
@@ -68,7 +70,8 @@ async function getContainerUptime(containerName, containers) {
       startedAt,
       uptime: startedAt ? Math.floor((Date.now() - new Date(startedAt).getTime()) / 1000) : null,
     };
-  } catch {
+  } catch (err) {
+    console.warn("Failed to get container uptime:", err.message);
     return null;
   }
 }
@@ -98,7 +101,8 @@ async function getContainerMetrics(containerName, containers) {
       memory: { usage: memUsage, limit: memLimit, usagePercent: Math.round(memPercent * 100) / 100 },
       network: { rxBytes, txBytes },
     };
-  } catch {
+  } catch (err) {
+    console.warn("Failed to get container metrics:", err.message);
     return null;
   }
 }
@@ -125,7 +129,8 @@ async function getK8sPodUptime(podName, pods) {
       hostIP: pod.status.hostIP,
       podIP: pod.status.podIP,
     };
-  } catch {
+  } catch (err) {
+    console.warn("Failed to get K8s pod uptime:", err.message);
     return null;
   }
 }
@@ -151,7 +156,8 @@ async function getK8sPodMetrics(podName, pods) {
       containers: containerResources,
       restartCount,
     };
-  } catch {
+  } catch (err) {
+    console.warn("Failed to get K8s pod metrics:", err.message);
     return null;
   }
 }
@@ -253,7 +259,9 @@ router.get("/services/:name/logs", async (req, res) => {
           });
         }
       }
-    } catch {}
+    } catch (err) {
+      console.warn("Failed to fetch Docker logs:", err.message);
+    }
   }
 
   try {
@@ -276,10 +284,14 @@ router.get("/services/:name/logs", async (req, res) => {
               message: line,
             });
           }
-        } catch {}
+        } catch (err) {
+          console.warn("Failed to fetch K8s pod logs:", err.message);
+        }
       }
     }
-  } catch {}
+  } catch (err) {
+    console.warn("Failed to list K8s pods:", err.message);
+  }
 
   try {
     const result = await pgPool.query(
@@ -299,7 +311,9 @@ router.get("/services/:name/logs", async (req, res) => {
         severity: row.severity,
       });
     }
-  } catch {}
+  } catch (err) {
+    console.warn("Failed to query audit logs:", err.message);
+  }
 
   logs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
   res.json(logs.slice(0, limit));

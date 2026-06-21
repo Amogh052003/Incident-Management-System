@@ -125,7 +125,7 @@ function IncidentWorkspace({ id, onClose }) {
           {nextStatus && (
             <button className="button workspace-action-btn"
               onClick={() => handleTransition(nextStatus)}
-              disabled={transitioning || (showRcaForm && (!rcaInput.root_cause || !rcaInput.fix))}>
+              disabled={transitioning || (showRcaForm && (!rcaInput.root_cause || !rcaInput.fix || !rcaInput.prevention))}>
               {nextStatus === "INVESTIGATING" && <Search size={14} />}
               {nextStatus === "RESOLVED" && <CheckCircle size={14} />}
               {nextStatus === "CLOSED" && <CheckCircle size={14} />}

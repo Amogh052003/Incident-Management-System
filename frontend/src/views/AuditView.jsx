@@ -15,7 +15,7 @@ export default function AuditView() {
           const logs = await res.json();
           setEntries(logs);
         }
-      } catch {} finally { setLoading(false); }
+      } catch (err) { console.error("Failed to load audit logs:", err); } finally { setLoading(false); }
     }
     load();
   }, []);

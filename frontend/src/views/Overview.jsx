@@ -14,7 +14,7 @@ function useTopology() {
   useEffect(() => {
     fetch("/topology").then(r => r.json()).then(d =>
       setState({ graph: d.graph, topologyState: d.state })
-    ).catch(() => {});
+    ).catch(err => console.error("Failed to load topology:", err));
   }, []);
   return state;
 }
@@ -44,11 +44,15 @@ function useRealtimeFeed() {
                 message: l.message, severity: null,
               }));
             }
-          } catch {}
+          } catch (err) {
+            console.error("Failed to load incident logs:", err);
+          }
         }
         feed.sort((a, b) => new Date(b.time) - new Date(a.time));
         setEntries(feed.slice(0, 50));
-      } catch {}
+      } catch (err) {
+        console.error("Failed to load incidents:", err);
+      }
     }
     load();
   }, []);

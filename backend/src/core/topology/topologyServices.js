@@ -55,7 +55,6 @@ function getTopologyState() {
       incidents: resource.incidents || [],
       lastUpdated: resource.health?.updatedAt || null,
     };
-    console.log(getResources());
   }
 
   return state;

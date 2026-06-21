@@ -6,16 +6,13 @@ const MAX_REQUESTS = 100;
 async function rateLimiter(req, res, next) {
   try {
     const ip = req.ip || req.connection.remoteAddress;
-
     const key = `rate:${ip}`;
 
-    // increment counter
-    const current = await redis.incr(key);
-
-    if (current === 1) {
-      // first request → set expiry
-      await redis.expire(key, WINDOW_SIZE);
-    }
+    const multi = redis.multi();
+    multi.incr(key);
+    multi.expire(key, WINDOW_SIZE);
+    const results = await multi.exec();
+    const current = results[0][1];
 
     if (current > MAX_REQUESTS) {
       return res.status(429).json({
@@ -25,11 +22,8 @@ async function rateLimiter(req, res, next) {
     }
 
     next();
-
   } catch (err) {
     console.error("Rate limiter error:", err);
-
-    // fail open (don't block API if Redis fails)
     next();
   }
 }

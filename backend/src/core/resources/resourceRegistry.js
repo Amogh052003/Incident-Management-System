@@ -28,7 +28,6 @@ function updateResourceHealth(
 
     return;
   }
-  console.log(resources);
   resources[id].health.status =
     status;
 

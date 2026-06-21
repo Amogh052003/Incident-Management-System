@@ -97,12 +97,6 @@ async function processSignal(signal) {
           "❌ No Work Item found for signal"
         );
       }
-
-      if (Math.random() < 0.1) {
-        console.log(
-          `Duplicate → Work Item ${workItemId}`
-        );
-      }
     }
 
     // --------------------------------------------------
@@ -170,8 +164,6 @@ async function processSignal(signal) {
     }
 
     increment();
-
-    console.log(" Signal stored");
 
     // --------------------------------------------------
     // Domain Events
