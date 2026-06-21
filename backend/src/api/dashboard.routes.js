@@ -7,7 +7,7 @@ const {
 
 const router = express.Router();
 
-// 🔥 GET ALL INCIDENTS
+
 router.get("/incidents", async (req, res) => {
   try {
     const status = req.query.status || "ACTIVE"; // default to ACTIVE
@@ -18,7 +18,7 @@ router.get("/incidents", async (req, res) => {
   }
 });
 
-// 🔥 GET INCIDENT DETAIL
+
 router.get("/incidents/:id", async (req, res) => {
   try {
     const data = await getIncidentById(req.params.id);

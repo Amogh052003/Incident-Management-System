@@ -10,6 +10,10 @@ const {
   linkRuntimeInstance,
 } = require("../../resources/resourceRegistry");
 
+const {
+  addDependency,
+} = require("../../topology/dependencyStore");
+
 function matchPodToResource(podName, resources) {
   for (const [id, resource] of Object.entries(resources)) {
     if (!resource.runtimeSelector) continue;
@@ -33,9 +37,9 @@ async function discoverCluster() {
     appsApi.listDeploymentForAllNamespaces(),
   ]);
 
-  const pods = podsRes.body.items;
-  const services = servicesRes.body.items;
-  const deployments = deploymentsRes.body.items;
+  const pods = podsRes.items;
+  const services = servicesRes.items;
+  const deployments = deploymentsRes.items;
 
   console.log(`[K8S] Pods: ${pods.length}, Services: ${services.length}, Deployments: ${deployments.length}`);
 
@@ -103,6 +107,36 @@ async function discoverCluster() {
         env: c.env || [],
       })),
     });
+  }
+
+  for (const svc of services) {
+    const svcSelector = svc.spec.selector || {};
+    const selectorKeys = Object.keys(svcSelector);
+    if (selectorKeys.length === 0) continue;
+
+    const svcName = svc.metadata.name;
+    for (const pod of pods) {
+      const podLabels = pod.metadata.labels || {};
+      const matches = selectorKeys.every((k) => podLabels[k] === svcSelector[k]);
+      if (matches) {
+        addDependency(svcName, pod.metadata.name);
+      }
+    }
+  }
+
+  for (const deploy of deployments) {
+    const deploySelector = deploy.spec.selector?.matchLabels || {};
+    const selectorKeys = Object.keys(deploySelector);
+    if (selectorKeys.length === 0) continue;
+
+    const deployName = deploy.metadata.name;
+    for (const pod of pods) {
+      const podLabels = pod.metadata.labels || {};
+      const matches = selectorKeys.every((k) => podLabels[k] === deploySelector[k]);
+      if (matches) {
+        addDependency(deployName, pod.metadata.name);
+      }
+    }
   }
 
   return {

@@ -8,9 +8,13 @@ let k8sApi = null;
 let appsApi = null;
 let clusterReady = false;
 
-try {
-  kc.loadFromCluster();
-} catch {
+if (process.env.KUBERNETES_SERVICE_HOST && process.env.KUBERNETES_SERVICE_PORT) {
+  try {
+    kc.loadFromCluster();
+  } catch {
+    kc.loadFromDefault();
+  }
+} else {
   kc.loadFromDefault();
 }
 
@@ -21,6 +25,7 @@ if (cluster && cluster.server) {
     k8sApi = kc.makeApiClient(k8s.CoreV1Api);
     appsApi = kc.makeApiClient(k8s.AppsV1Api);
     clusterReady = true;
+    console.log("[K8S] Connected to cluster:", cluster.server);
   } catch {
     console.warn("[K8S] Invalid cluster server URL — K8s discovery disabled");
   }

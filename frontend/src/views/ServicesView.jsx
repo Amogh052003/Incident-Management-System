@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import { Server, Activity, Radio, CheckCircle, XCircle, Clock } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Server, CheckCircle, XCircle } from "lucide-react";
+import ServiceDetail from "../components/ServiceDetail";
 
 export default function ServicesView() {
   const [services, setServices] = useState([]);
@@ -36,11 +37,7 @@ export default function ServicesView() {
         {services.map((svc, i) => (
           <motion.div key={svc.name} className="service-card"
             initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
-            onClick={() => setSelected(selected === svc.name ? null : svc.name)}
-            style={selected === svc.name ? {
-              borderColor: svc.status === "healthy" ? "#22c55e" : "#ef4444",
-              boxShadow: `0 0 20px ${svc.status === "healthy" ? "rgba(34,197,94,0.15)" : "rgba(239,68,68,0.15)"}`,
-            } : {}}>
+            onClick={() => setSelected(svc.name)}>
             <div className="service-card-top">
               <span className="service-card-name">{svc.name}</span>
               <span className={`service-card-status-badge ${svc.status}`}>
@@ -62,31 +59,15 @@ export default function ServicesView() {
                 <span className="service-card-metric-label">Dependents</span>
               </div>
             </div>
-            {selected === svc.name && (
-              <motion.div className="service-card-detail" initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}>
-                {svc.dependencies.length > 0 && (
-                  <div className="service-card-section">
-                    <strong>Depends on:</strong>
-                    <div className="service-card-tags">{svc.dependencies.map(d => <span key={d} className="service-tag">{d}</span>)}</div>
-                  </div>
-                )}
-                {svc.dependents.length > 0 && (
-                  <div className="service-card-section">
-                    <strong>Depended by:</strong>
-                    <div className="service-card-tags">{svc.dependents.map(d => <span key={d} className="service-tag">{d}</span>)}</div>
-                  </div>
-                )}
-                {svc.lastUpdated && (
-                  <div className="service-card-section muted">
-                    <Clock size={12} /> Last updated: {new Date(svc.lastUpdated).toLocaleString()}
-                  </div>
-                )}
-              </motion.div>
-            )}
           </motion.div>
         ))}
       </div>
+
+      <AnimatePresence>
+        {selected && (
+          <ServiceDetail key={selected} name={selected} onClose={() => setSelected(null)} />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

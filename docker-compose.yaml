@@ -36,7 +36,9 @@ services:
   # ---------- Backend API ----------
   backend:
     build:
-      context: ./backend
+      context: .
+      dockerfile: Dockerfile
+      target: backend
     ports:
       - "3000:3000"
     environment:
@@ -62,14 +64,20 @@ services:
         condition: service_started
     restart: unless-stopped
     command: node src/index.js
+    networks:
+      - default
+      - minikube
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ~/.kube:/root/.kube:ro
+      - ~/.minikube:/home/vihan/.minikube:ro
 
   # ---------- Worker (scaled) ----------
   worker:
     build:
-      context: ./backend
+      context: .
+      dockerfile: Dockerfile
+      target: backend
     environment:
       REDIS_HOST: redis
       REDIS_PORT: 6379
@@ -92,12 +100,18 @@ services:
   # ---------- Frontend ----------
   frontend:
     build:
-      context: ./frontend
+      context: .
+      dockerfile: Dockerfile
+      target: frontend
     ports:
       - "5173:80"
     depends_on:
       - backend
     restart: unless-stopped
+
+networks:
+  minikube:
+    external: true
 
 volumes:
   mongo_data:

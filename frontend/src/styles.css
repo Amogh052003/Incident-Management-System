@@ -885,6 +885,47 @@ body {
 .service-tag { font-size: 0.72rem; background: rgba(96,165,250,0.12); color: #60a5fa; padding: 3px 8px; border-radius: 4px; }
 
 /* ═══════════════════════════════════════════════════════
+   SERVICE DETAIL
+   ═══════════════════════════════════════════════════════ */
+
+.service-detail-tabs {
+  display: flex;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  flex-shrink: 0;
+}
+.service-detail-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 12px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: #6b7280;
+  font: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.service-detail-tab:hover { color: #d4dae8; background: rgba(255,255,255,0.03); }
+.service-detail-tab.active { color: #00f0ff; border-bottom-color: #00f0ff; }
+
+.service-detail-overview { display: flex; flex-direction: column; gap: 4px; }
+.service-detail-overview .detail-summary { gap: 8px; }
+.service-detail-overview .detail-field { display: flex; align-items: center; gap: 8px; padding: 6px 0;}
+
+.service-metric-box {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 12px; border-radius: 8px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.service-metric-value { font-size: 1rem; font-weight: 700; color: #e8ecf4; }
+.service-metric-label { font-size: 0.65rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.04em; }
+
+/* ═══════════════════════════════════════════════════════
    RCA VIEW
    ═══════════════════════════════════════════════════════ */
 
