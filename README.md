@@ -1,6 +1,6 @@
 # Incident Management System (IMS)
 
-A scalable, distributed Incident Management System designed to ingest high-volume signals, process them asynchronously, and manage incidents through a structured workflow with real-time visibility.
+A scalable, distributed Incident Management System designed to ingest high-volume signals, process them asynchronously, and manage incidents through a structured workflow with real-time visibility, runtime topology discovery, and extensible plugin/integration architecture.
 
 ---
 
@@ -45,7 +45,7 @@ The platform should support:
 * operational topology visualization,
 * alert orchestration,
 * audit logging,
-* and deployment through Docker Compose or Kubernetes Helm charts for easy self-hosting.
+* and deployment through Docker Compose or Kubernetes for easy self-hosting.
 
 The goal is to provide engineering teams with a unified operational intelligence layer that transforms raw infrastructure signals into actionable operational awareness.
 
@@ -60,47 +60,10 @@ Modern distributed systems generate thousands of signals (errors, latency spikes
 * Groups related signals into incidents (debouncing)
 * Tracks incidents through a workflow lifecycle
 * Requires Root Cause Analysis (RCA) before closure
-* Provides a real-time dashboard for monitoring
-
----
-
-# Architecture Diagram
-
-![Architecture Diagram](./assets/IMS_high_level_architecture.drawio.png)
-
-### System Flow Explanation
-
-1. **Signal Producers**
-
-   * Generate high-volume signals (burst tests, failure scenarios)
-
-2. **Backend API**
-
-   * Handles `/signal` ingestion
-   * Applies rate limiting
-   * Pushes signals to Redis queue
-
-3. **Redis Queue (Backpressure Layer)**
-
-   * Buffers incoming signals
-   * Decouples ingestion from processing
-
-4. **Workers (Async Processing)**
-
-   * Consume signals from queue
-   * Apply debouncing logic
-   * Trigger alerting strategies
-
-5. **Storage Layer**
-
-   * **MongoDB (Data Lake):** Stores raw signals (audit log)
-   * **PostgreSQL (Source of Truth):** Stores incidents + RCA
-   * **Redis (Hot Path Cache):** Stores dashboard state
-
-6. **Frontend Dashboard**
-
-   * Fetches incidents via API
-   * Displays real-time updates (polling every 5s)
+* Discovers runtime infrastructure (Docker + Kubernetes)
+* Builds operational topology from runtime state
+* Provides real-time dashboard with WebSocket updates
+* Extends via plugins and third-party integrations
 
 ---
 
@@ -111,8 +74,10 @@ Modern distributed systems generate thousands of signals (errors, latency spikes
 * **Queue & Cache:** Redis
 * **Database (Source of Truth):** PostgreSQL
 * **Data Lake:** MongoDB
-* **Aggregations:** Redis (time-bucket counters), extensible to TimescaleDB
+* **Real-time:** Socket.IO (WebSockets)
 * **Containerization:** Docker + Docker Compose
+* **Orchestration:** Kubernetes (k8s manifests)
+* **Runtime Discovery:** Docker SDK + Kubernetes API
 
 ---
 
@@ -125,18 +90,26 @@ git clone https://github.com/Amogh052003/zeotap-IMS
 cd zeotap-IMS
 ```
 
-## 2. Start system
+## 2. Configure environment
+
+Copy the environment template and configure integrations as needed:
+
+```bash
+cp .env.example .env
+```
+
+## 3. Start system
 
 ```bash
 docker compose up --build --scale worker=3
 ```
 
-## 3. Access services
+## 4. Access services
 
 * Frontend: http://localhost:5173
 * Backend API: http://localhost:3000
 
-## 4. Generate data
+## 5. Generate data
 
 ```bash
 node backend/scenarios/rdbms-outage.js
@@ -214,8 +187,73 @@ MTTR = end_time - start_time
 
 ## 9. Real-Time Dashboard
 
-* Polling every 5 seconds
+* WebSocket-based real-time updates (via Socket.IO)
 * Cached responses via Redis for fast UI
+* Overview with P0/P1 counters, active incident timelines
+
+## 10. Runtime Infrastructure Discovery
+
+* Auto-discovers Docker containers and Kubernetes pods
+* Builds service dependency graph from runtime state
+* Monitors container health, CPU, memory, and network metrics
+
+## 11. Operational Topology
+
+* Real-time topology graph visualization
+* Service dependency mapping
+* Health status propagation across dependent services
+* Visual impact analysis during incidents
+
+## 12. Plugin System
+
+* Extensible plugin architecture with event-driven hooks
+* Slack plugin for alert notifications
+* Plugin registry with enable/disable/toggle controls
+* Activity feed for plugin actions
+
+## 13. Integration Management
+
+* Pre-configured integrations: Slack, GitHub, Jira, Prometheus, PagerDuty
+* Status tracking per integration (pending, configured, active, error)
+* Configuration management via UI
+
+## 14. GitHub Integration
+
+* GitHub App authentication with JWT-based tokens
+* Automatic issue creation for incidents
+* Repository-to-service mapping (manual + annotation-based)
+* Installation management and webhook handling
+* Incident-issue linking with bidirectional navigation
+
+## 15. Audit Logging
+
+* Event-driven audit trail for all system operations
+* Filterable by event type, component, severity
+* Timestamped, structured log entries with metadata
+
+## 16. Logs Service
+
+* Centralized log search with full-text query
+* Filtering by source, severity, component, time range
+* Paginated results
+
+## 17. Settings Management
+
+* Key-value settings store with category grouping
+* System-wide configurable parameters
+
+## 18. Services View
+
+* Per-service detail view with runtime info
+* Docker container and Kubernetes pod metrics
+* Live container logs (Docker + K8s)
+* Uptime, status, and resource usage
+
+## 19. Kubernetes Support
+
+* Native Kubernetes manifests (namespace, backend, redis)
+* K8s-aware service discovery and monitoring
+* Pod-level health and metrics tracking
 
 ---
 
@@ -231,7 +269,7 @@ Implemented using the **Strategy Pattern** — alerting logic is swappable per c
 
 Extensible to real delivery channels:
 
-* Slack webhooks
+* Slack webhooks (via Slack plugin)
 * Email (SendGrid / SES)
 * PagerDuty API
 
@@ -299,6 +337,71 @@ POST /workitem/:id/status
 GET  /health
 ```
 
+### Topology
+
+```
+GET  /topology
+```
+
+### Dashboard
+
+```
+GET  /dashboard
+```
+
+### Services
+
+```
+GET  /services/:name
+GET  /services/:name/logs
+```
+
+### Plugins
+
+```
+GET  /plugins
+GET  /plugins/:id
+PUT  /plugins/:id
+GET  /plugins/activity/feed
+```
+
+### Integrations
+
+```
+GET  /integrations
+GET  /integrations/:name
+PUT  /integrations/:name
+```
+
+### Settings
+
+```
+GET  /settings
+GET  /settings/:key
+PUT  /settings/:key
+```
+
+### Audit
+
+```
+POST /audit/log
+GET  /audit/logs
+GET  /audit/filters
+```
+
+### GitHub
+
+```
+GET  /github/installations
+POST /github/installations/fetch
+GET  /github/mappings
+POST /github/mappings
+POST /github/issues
+GET  /github/issues/:incidentId
+GET  /github/install-url
+POST /github/webhook
+```
+
 ---
 
 # Failure Simulation (Sample Data)
@@ -351,6 +454,49 @@ npm test
 
 ---
 
+# Project Structure
+
+```
+/backend
+  /api          - Express routes (signal, workitem, topology, plugins, integrations, settings, audit, github, services, logs)
+  /core         - Core logic (events, resources, discovery, topology, plugins, realtime, distributed)
+  /db           - Database connections (PostgreSQL, MongoDB, Redis)
+  /middleware   - Rate limiting middleware
+  /models       - Mongoose models (GitHubInstallation, RepoMapping, IncidentIssueLink)
+  /plugins      - Plugin implementations (Slack)
+  /services     - Business logic (signal, workflow, alerting, RCA, dashboard, plugin, integration, settings, audit, github, log)
+  /states       - State machine (State pattern)
+  /strategies   - Alerting strategies (Strategy pattern)
+  /workers      - Async signal consumers
+  /scenarios    - Failure simulation scripts
+/frontend
+  src/
+    /components - Reusable UI components (topology graph, service detail, metrics panel)
+    /hooks      - Custom React hooks (useIncidents)
+    /incidents  - Incident-related components
+    /layout     - Layout components (TopNavbar, Sidebar)
+    /views      - Page views (Overview, Topology, Incidents, Services, RCA, GitHub, Plugins, Integrations, Settings, Audit, Logs, Timeline)
+/k8s           - Kubernetes manifests (namespace, backend, redis)
+docker-compose.yaml
+README.md
+```
+
+---
+
+# Dashboard Views
+
+* **Overview** — Real-time summary with P0/P1 counters, active incidents, timeline
+* **Topology** — Live service dependency graph with health status propagation
+* **Incidents** — Incident list with status, priority, and filtering
+* **Services** — Per-service runtime detail, metrics, and live logs
+* **RCA** — Root Cause Analysis form and review
+* **GitHub** — GitHub App installation, repo mappings, and incident-issue links
+* **Plugins** — Plugin registry with enable/disable controls and activity feed
+* **Integrations** — Third-party integration management (Slack, Jira, Prometheus, PagerDuty)
+* **Settings** — System-wide configuration
+
+---
+
 # Notable Challenge: Cache Invalidation
 
 ### Problem
@@ -377,58 +523,6 @@ This ensures full consistency across all views at the cost of one extra cache mi
 
 ---
 
-# Project Structure
-
-```
-/backend
-  /api          - Express routes and rate limiting
-  /workers      - Async signal consumers
-  /services     - Business logic (state machine, alerting, RCA)
-  /scenarios    - Failure simulation scripts
-/frontend
-  src/          - React dashboard
-/docs
-  /prompts      - AI prompts and planning notes
-  /design       - Architecture decisions and design docs
-docker-compose.yml
-README.md
-```
-
----
-
-# Screenshots
-
-### Dashboard
-
-![Dashboard](./assets/screenshots/dashboard.png)
-
-### Incident Detail View
-
-![Incident Detail](./assets/screenshots/incident.png)
-
-### RCA Form
-
-![RCA Form](./assets/screenshots/RCA.png)
-
-### Status Update
-
-![Status Update](./assets/screenshots/status.png)
-
----
-
-# Prompts / Specs / Plans
-
-All planning and design artifacts are available in:
-
-```
-/docs/prompts/
-/docs/design/
-```
-
-Includes architecture decisions, feature planning, and system design notes — checked in as required by submission guidelines.
-
----
-
 # Bonus Features
 
 * Scenario-based failure simulation (RDBMS + MCP outage scripts)
@@ -436,6 +530,11 @@ Includes architecture decisions, feature planning, and system design notes — c
 * Horizontal worker scaling via `--scale worker=3`
 * Realistic cascading failure behavior across priority levels
 * Load-tested and benchmarked with autocannon
+* Runtime infrastructure discovery (Docker + Kubernetes)
+* WebSocket-based real-time updates
+* Plugin architecture with event-driven hooks
+* GitHub App integration with issue auto-creation
+* Kubernetes-native deployment support
 
 ---
 
@@ -450,6 +549,9 @@ This project demonstrates:
 * Time-series aggregation support
 * Real-time incident tracking with enforced workflow
 * Production-style design patterns (Strategy + State)
+* Runtime infrastructure discovery and topology visualization
+* Extensible plugin and integration architecture
+* Kubernetes-native deployment model
 
 ---
 
