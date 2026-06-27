@@ -8,10 +8,6 @@ pipeline {
         IMAGE_TAG = "${BUILD_NUMBER}"
     }
 
-    tools {
-        nodejs "nodejs"
-    }
-
     stages {
 
         stage('Checkout') {
