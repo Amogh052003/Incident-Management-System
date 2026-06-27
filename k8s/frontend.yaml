@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 
 metadata:
-  name: ims-backend
+  name: ims-frontend
   namespace: ims
 
 spec:
@@ -10,18 +10,18 @@ spec:
 
   selector:
     matchLabels:
-      app: ims-backend
+      app: ims-frontend
 
   template:
     metadata:
       labels:
-        app: ims-backend
+        app: ims-frontend
 
     spec:
       containers:
-        - name: backend
+        - name: frontend
 
-          image: IncidentManagementSystem/backend:latest
+          image: IncidentManagementSystem/frontend:latest
 
           imagePullPolicy: Never
 
@@ -32,12 +32,12 @@ apiVersion: v1
 kind: Service
 
 metadata:
-  name: ims-backend
+  name: ims-frontend
   namespace: ims
 
 spec:
   selector:
-    app: ims-backend
+    app: ims-frontend
 
   ports:
     - port: 3000
