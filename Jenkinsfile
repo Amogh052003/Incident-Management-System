@@ -1,15 +1,46 @@
 pipeline {
-
-    agent any
+    agent {
+        kubernetes {
+            yaml """
+apiVersion: v1
+kind: Pod
+metadata:
+  name: kaniko-builder
+spec:
+  containers:
+  // Node container to handle dependency installs and testing
+  - name: node
+    image: node:18-alpine
+    command:
+    - cat
+    tty: true
+  // Kaniko container to build and push images
+  - name: kaniko
+    image: gcr.io/kaniko-project/executor:debug
+    imagePullPolicy: Always
+    command:
+    - /busybox/cat
+    tty: true
+    workingDir: /tmp/jenkins
+    volumeMounts:
+    - name: registry-creds
+      mountPath: /kaniko/.docker
+  volumes:
+  - name: registry-creds
+    secret:
+      secretName: kaniko-secret
+"""
+        }
+    }
 
     environment {
-        BACKEND_IMAGE = "IncidentManagementSystem/backend"
-        FRONTEND_IMAGE = "IncidentManagementSystem/frontend"
+        // Updated image paths to include the registry domain implicitly used by Kaniko
+        BACKEND_IMAGE = "docker.io/IncidentManagementSystem/backend"
+        FRONTEND_IMAGE = "docker.io/IncidentManagementSystem/frontend"
         IMAGE_TAG = "${BUILD_NUMBER}"
     }
 
     stages {
-
         stage('Checkout') {
             steps {
                 checkout scmGit(
@@ -24,19 +55,21 @@ pipeline {
 
         stage('Install Dependencies') {
             parallel {
-
                 stage('Backend') {
                     steps {
-                        dir('backend') {
-                            sh 'npm ci'
+                        container('node') {
+                            dir('backend') {
+                                sh 'npm ci'
+                            }
                         }
                     }
                 }
-
                 stage('Frontend') {
                     steps {
-                        dir('frontend') {
-                            sh 'npm ci'
+                        container('node') {
+                            dir('frontend') {
+                                sh 'npm ci'
+                            }
                         }
                     }
                 }
@@ -45,65 +78,56 @@ pipeline {
 
         stage('Run Tests') {
             parallel {
-
                 stage('Backend Tests') {
                     steps {
-                        dir('backend') {
-                            sh 'npm test'
+                        container('node') {
+                            dir('backend') {
+                                sh 'npm test'
+                            }
                         }
                     }
                 }
-
                 stage('Frontend Tests') {
                     steps {
-                        dir('frontend') {
-                            sh 'npm test'
+                        container('node') {
+                            dir('frontend') {
+                                sh 'npm test'
+                            }
                         }
                     }
                 }
             }
         }
 
-        stage('Build Images') {
+        // Kaniko builds and pushes the image simultaneously in a single command
+        stage('Build & Push Images') {
             parallel {
-
                 stage('Backend Image') {
                     steps {
-                        sh """
-                        docker build \
-                        -t ${BACKEND_IMAGE}:${IMAGE_TAG} \
-                        -t ${BACKEND_IMAGE}:latest \
-                        ./backend
-                        """
+                        container('kaniko') {
+                            sh """
+                            /kaniko/executor \
+                            --context=${WORKSPACE}/backend \
+                            --dockerfile=${WORKSPACE}/backend/Dockerfile \
+                            --destination=${BACKEND_IMAGE}:${IMAGE_TAG} \
+                            --destination=${BACKEND_IMAGE}:latest \
+                            --cleanup
+                            """
+                        }
                     }
                 }
-
                 stage('Frontend Image') {
                     steps {
-                        sh """
-                        docker build \
-                        -t ${FRONTEND_IMAGE}:${IMAGE_TAG} \
-                        -t ${FRONTEND_IMAGE}:latest \
-                        ./frontend
-                        """
-                    }
-                }
-            }
-        }
-
-        stage('Push Images') {
-            steps {
-                script {
-
-                    docker.withRegistry('https://registry.hub.docker.com', 'dockerhub-creds') {
-
-                        sh """
-                        docker push ${BACKEND_IMAGE}:${IMAGE_TAG}
-                        docker push ${BACKEND_IMAGE}:latest
-
-                        docker push ${FRONTEND_IMAGE}:${IMAGE_TAG}
-                        docker push ${FRONTEND_IMAGE}:latest
-                        """
+                        container('kaniko') {
+                            sh """
+                            /kaniko/executor \
+                            --context=${WORKSPACE}/frontend \
+                            --dockerfile=${WORKSPACE}/frontend/Dockerfile \
+                            --destination=${FRONTEND_IMAGE}:${IMAGE_TAG} \
+                            --destination=${FRONTEND_IMAGE}:latest \
+                            --cleanup
+                            """
+                        }
                     }
                 }
             }
@@ -111,10 +135,8 @@ pipeline {
 
         stage('Update Kubernetes Manifests') {
             steps {
-
                 sh """
                 sed -i 's|image: .*|image: ${BACKEND_IMAGE}:${IMAGE_TAG}|' k8s/backend.yaml
-
                 sed -i 's|image: .*|image: ${FRONTEND_IMAGE}:${IMAGE_TAG}|' k8s/frontend.yaml
                 """
             }
@@ -122,9 +144,7 @@ pipeline {
 
         stage('Deploy to Kubernetes') {
             steps {
-
                 withKubeConfig(credentialsId: 'kubeconfig') {
-
                     sh '''
                     kubectl apply -f k8s/backend.yaml
                     kubectl apply -f k8s/frontend.yaml
@@ -138,15 +158,13 @@ pipeline {
     }
 
     post {
-
         always {
-            sh 'docker image prune -f'
+            // Docker image prune is no longer needed since Kaniko doesn't use a Docker daemon host!
+            echo 'Cleaning up build execution...'
         }
-
         success {
             echo 'Pipeline completed successfully.'
         }
-
         failure {
             echo 'Pipeline failed.'
         }
