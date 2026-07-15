@@ -8,13 +8,13 @@ metadata:
   name: kaniko-builder
 spec:
   containers:
-  // Node container to handle dependency installs and testing
+
   - name: node
     image: node:18-alpine
     command:
     - cat
     tty: true
-  // Kaniko container to build and push images
+
   - name: kaniko
     image: gcr.io/kaniko-project/executor:debug
     imagePullPolicy: Always
