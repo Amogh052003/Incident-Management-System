@@ -1,0 +1,215 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Incident Management System API",
+    "version": "1.0.0",
+    "description": "API reference for the Incident Management System."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Local development server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Audit",
+      "description": "Audit logging and audit event retrieval"
+    }
+  ],
+  "components": {
+    "schemas": {
+      "AuditLogRequest": {
+        "type": "object",
+        "required": [
+          "event_type"
+        ],
+        "properties": {
+          "event_type": {
+            "type": "string",
+            "description": "Type of event being recorded."
+          },
+          "component": {
+            "type": "string",
+            "description": "Component associated with the event."
+          },
+          "severity": {
+            "type": "string",
+            "description": "Severity of the event."
+          },
+          "message": {
+            "type": "string",
+            "description": "Human-readable description of the event."
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Additional structured metadata.",
+            "additionalProperties": true
+          }
+        }
+      },
+      "AuditLog": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "event_type": {
+            "type": "string"
+          },
+          "component": {
+            "type": "string",
+            "nullable": true
+          },
+          "severity": {
+            "type": "string",
+            "nullable": true
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/audit/log": {
+      "post": {
+        "summary": "Create an audit log entry",
+        "description": "Records an event in the audit log.",
+        "tags": [
+          "Audit"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AuditLogRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Audit event successfully logged."
+          },
+          "400": {
+            "description": "event_type was not provided."
+          },
+          "500": {
+            "description": "Failed to create the audit event."
+          }
+        }
+      }
+    },
+    "/audit/logs": {
+      "get": {
+        "summary": "Retrieve audit logs",
+        "description": "Retrieves audit events with optional filtering and pagination.",
+        "tags": [
+          "Audit"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "event_type",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter logs by event type."
+          },
+          {
+            "in": "query",
+            "name": "component",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter logs by component."
+          },
+          {
+            "in": "query",
+            "name": "severity",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter logs by severity."
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "default": 100
+            },
+            "description": "Maximum number of records to return."
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "schema": {
+              "type": "integer",
+              "default": 0
+            },
+            "description": "Number of records to skip."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of audit log records."
+          },
+          "500": {
+            "description": "Failed to retrieve audit logs."
+          }
+        }
+      }
+    },
+    "/audit/filters": {
+      "get": {
+        "summary": "Retrieve available audit filters",
+        "description": "Returns the distinct components and severities present in the audit log.",
+        "tags": [
+          "Audit"
+        ],
+        "responses": {
+          "200": {
+            "description": "Available audit components and severities.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "components": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "severities": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Failed to retrieve audit filters."
+          }
+        }
+      }
+    }
+  }
+}
