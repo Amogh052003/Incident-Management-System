@@ -3,6 +3,20 @@ const Signal = require("../models/signal");
 
 const VALID_SOURCES = ["audit", "signal", "work_item"];
 
+/**
+ * Searches audit, signal, and work-item logs, merges them by timestamp, and pages the result.
+ *
+ * @param {Object} [filters] - Search and paging filters.
+ * @param {string} [filters.q] - Text query.
+ * @param {*} [filters.from] - Inclusive lower timestamp bound.
+ * @param {*} [filters.to] - Inclusive upper timestamp bound.
+ * @param {string} [filters.sources] - Comma-separated source names or `all`.
+ * @param {string} [filters.severity] - Comma-separated severity values.
+ * @param {string} [filters.component] - Component filter.
+ * @param {number} [filters.page=1] - One-based result page.
+ * @param {number} [filters.limit=50] - Results per page.
+ * @returns {Promise<Object>} Paged entries and total counts.
+ */
 async function searchLogs({ q, from, to, sources, severity, component, page = 1, limit = 50 } = {}) {
   const offset = (page - 1) * limit;
   const sourceList = sources && sources !== "all"
@@ -31,6 +45,11 @@ async function searchLogs({ q, from, to, sources, severity, component, page = 1,
   return { entries: paged, total, page, limit, totalPages: Math.ceil(total / limit) };
 }
 
+/**
+ * Queries PostgreSQL audit logs and maps rows to the shared log-entry shape.
+ *
+ * @returns {Promise<Array<Object>>} Matching audit entries.
+ */
 async function queryAuditLogs(q, from, to, severity, component, limit) {
   const conditions = [];
   const values = [];
@@ -80,6 +99,11 @@ async function queryAuditLogs(q, from, to, severity, component, limit) {
   }));
 }
 
+/**
+ * Queries MongoDB signals and maps documents to the shared log-entry shape.
+ *
+ * @returns {Promise<Array<Object>>} Matching signal entries.
+ */
 async function querySignalLogs(q, from, to, component, limit) {
   const filter = {};
 
@@ -115,6 +139,11 @@ async function querySignalLogs(q, from, to, component, limit) {
   }));
 }
 
+/**
+ * Queries PostgreSQL work-item status logs and maps rows to the shared log-entry shape.
+ *
+ * @returns {Promise<Array<Object>>} Matching status-change entries.
+ */
 async function queryWorkItemLogs(q, from, to, component, limit) {
   const conditions = [];
   const values = [];
@@ -165,6 +194,11 @@ async function queryWorkItemLogs(q, from, to, component, limit) {
   });
 }
 
+/**
+ * Collects available log sources, severities, and component names across data stores.
+ *
+ * @returns {Promise<Object>} Filter options for log searches.
+ */
 async function getLogFilters() {
   const [components, severities, workComponents] = await Promise.all([
     pgPool.query("SELECT DISTINCT component FROM audit_logs WHERE component IS NOT NULL ORDER BY component"),

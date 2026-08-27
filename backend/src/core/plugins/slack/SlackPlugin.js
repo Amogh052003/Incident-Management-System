@@ -9,12 +9,23 @@ const EVENTS = require(
 );
 
 class SlackPlugin extends BasePlugin {
+  /**
+   * Creates a Slack plugin with the supplied webhook configuration.
+   *
+   * @param {Object} config - Plugin configuration containing an optional `webhookUrl`.
+   */
   constructor(config) {
     super(config);
 
     this.name = "slack-plugin";
   }
 
+  /**
+   * Subscribes the plugin to incident-created events.
+   *
+   * @param {Object} ctx - Initialization context containing an event bus.
+   * @returns {Promise<void>} Resolves after the subscription is registered.
+   */
   async init(ctx) {
     const {
       eventBus,
@@ -34,6 +45,12 @@ class SlackPlugin extends BasePlugin {
     );
   }
 
+  /**
+   * Posts an incident-created message to the configured Slack webhook.
+   *
+   * @param {Object} incident - Incident payload used to build the message.
+   * @returns {Promise<void>} Resolves after posting or logging a failed post.
+   */
   async sendIncidentAlert(
     incident
   ) {

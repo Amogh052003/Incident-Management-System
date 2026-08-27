@@ -6,6 +6,12 @@ class P1Strategy extends AlertStrategy {
     this.severity = 'P1';
   }
 
+  /**
+   * Logs a high-priority alert and simulated engineering notification.
+   *
+   * @param {Object} context - Alert context containing component and message fields.
+   * @returns {void}
+   */
   sendAlert(context) {
     console.log("P1 ALERT: High priority issue");
     console.log(`Component: ${context.component_id}`);

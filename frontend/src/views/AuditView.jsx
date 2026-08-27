@@ -1,6 +1,11 @@
 import { useState, useEffect } from "react";
 import { ClipboardList, Clock, Radio, AlertTriangle, Search, Filter, X } from "lucide-react";
 
+/**
+ * Loads and filters audit log entries.
+ *
+ * @returns {JSX.Element} Audit log view.
+ */
 export default function AuditView() {
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);

@@ -80,6 +80,11 @@ function EventCorrelation({ logs }) {
   );
 }
 
+/**
+ * Loads incidents and renders the selected incident's causal analysis data.
+ *
+ * @returns {JSX.Element} Root cause analysis view.
+ */
 export default function RCAView() {
   const [incidents, setIncidents] = useState([]);
   const [selectedId, setSelectedId] = useState(null);

@@ -3,6 +3,11 @@ const redis = require("../db/redis");
 
 const ALL_CACHE_KEY = "settings:all";
 
+/**
+ * Returns all settings from Redis when cached, otherwise reads and caches them from PostgreSQL.
+ *
+ * @returns {Promise<Array<Object>>} Settings ordered by category and key.
+ */
 async function getSettings() {
   const cached = await redis.get(ALL_CACHE_KEY);
   if (cached) return JSON.parse(cached);
@@ -12,11 +17,25 @@ async function getSettings() {
   return res.rows;
 }
 
+/**
+ * Retrieves one setting by key from PostgreSQL.
+ *
+ * @param {string} key - Setting key.
+ * @returns {Promise<Object|null>} Matching setting or `null`.
+ */
 async function getSetting(key) {
   const res = await pgPool.query("SELECT key, value, category FROM settings WHERE key = $1", [key]);
   return res.rows[0] || null;
 }
 
+/**
+ * Inserts or updates a setting and clears the cached settings list.
+ *
+ * @param {string} key - Setting key.
+ * @param {*} value - Setting value stored in PostgreSQL.
+ * @param {string} [category="general"] - Setting category.
+ * @returns {Promise<void>} Resolves after the database write and cache deletion.
+ */
 async function setSetting(key, value, category = "general") {
   await pgPool.query(
     `INSERT INTO settings (key, value, category) VALUES ($1, $2, $3)
@@ -26,6 +45,11 @@ async function setSetting(key, value, category = "general") {
   await redis.del(ALL_CACHE_KEY);
 }
 
+/**
+ * Inserts the default settings when the settings table is empty.
+ *
+ * @returns {Promise<void>} Resolves after seeding or when existing rows are found.
+ */
 async function seedSettings() {
   const existing = await pgPool.query("SELECT COUNT(*) FROM settings");
   if (parseInt(existing.rows[0].count) > 0) return;

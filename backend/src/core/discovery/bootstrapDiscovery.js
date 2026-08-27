@@ -10,6 +10,13 @@ const {
   "../resources/resourceRegistry"
 );
 
+/**
+ * Finds a registered resource whose runtime selector occurs in a container name.
+ *
+ * @param {string} containerName - Docker container name.
+ * @param {Object} resources - Resources keyed by ID.
+ * @returns {string|null} Matching resource ID, or `null`.
+ */
 function matchContainerToResource(
   containerName,
   resources
@@ -30,6 +37,11 @@ function matchContainerToResource(
   return null;
 }
 
+/**
+ * Discovers Docker containers, registers or links them, and attempts Kubernetes discovery.
+ *
+ * @returns {Promise<Object|null>} Kubernetes discovery data, or `null` when it is skipped.
+ */
 async function bootstrapDiscovery() {
   const containers =
     await discoverContainers();

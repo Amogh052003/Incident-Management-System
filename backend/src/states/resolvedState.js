@@ -1,6 +1,14 @@
 const BaseState = require("./baseState");
 
 class ResolvedState extends BaseState {
+  /**
+   * Closes a resolved work item.
+   *
+   * @param {string} newStatus - Requested next status.
+   * @param {*} data - Additional transition data, which is not used here.
+   * @returns {Promise<Object>} The closed status and end time update.
+   * @throws {Error} When the requested transition is not `CLOSED`.
+   */
   async transition(newStatus, data) {
     if (newStatus === "CLOSED") {
       return {

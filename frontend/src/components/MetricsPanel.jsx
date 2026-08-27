@@ -9,6 +9,11 @@ const METRICS = [
   { icon: Layers, label: "Queue Depth", value: "7", color: "#f97316" },
 ];
 
+/**
+ * Renders the configured metrics cards.
+ *
+ * @returns {JSX.Element} Metrics panel.
+ */
 export default function MetricsPanel() {
   return (
     <div className="metrics-panel">

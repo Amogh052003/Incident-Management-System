@@ -3,6 +3,17 @@ const redis = require("../db/redis");
 const WINDOW_SIZE = 10; // seconds
 const MAX_REQUESTS = 100;
 
+/**
+ * Limits requests by client IP using a Redis counter and fixed expiration window.
+ *
+ * Requests over the limit receive HTTP 429; Redis failures are logged and passed
+ * to the next middleware without terminating the request.
+ *
+ * @param {import('express').Request} req - Express request.
+ * @param {import('express').Response} res - Express response.
+ * @param {import('express').NextFunction} next - Express continuation callback.
+ * @returns {Promise<void>} Resolves after sending a response or calling `next`.
+ */
 async function rateLimiter(req, res, next) {
   try {
     const ip = req.ip || req.connection.remoteAddress;

@@ -17,6 +17,12 @@ const docker = new Docker({
     "/var/run/docker.sock",
 });
 
+/**
+ * Extracts a host-like value from a connection string or environment value.
+ *
+ * @param {*} value - Value that may contain a supported URI or hostname.
+ * @returns {string|null} Extracted host or `null`.
+ */
 function extractHost(value) {
   if (!value) {
     return null;
@@ -30,6 +36,12 @@ function extractHost(value) {
   return match?.[1] || null;
 }
 
+/**
+ * Infers Docker and Kubernetes dependency edges from container environment variables.
+ *
+ * @param {Array<Object>} [k8sPods] - Discovered Kubernetes pod summaries.
+ * @returns {Promise<void>} Resolves after dependency edges are added.
+ */
 async function discoverDependencies(k8sPods) {
   console.log(
     "[DISCOVERY] Discovering dependencies"

@@ -5,6 +5,12 @@ const router = express.Router();
 
 const VALID_STATUSES = ["OPEN", "INVESTIGATING", "RESOLVED", "CLOSED"];
 
+/**
+ * POST /workitem/:id/status: validates and applies a work-item status transition.
+ *
+ * @param {import('express').Request} req - Request containing ID and status/RCA body fields.
+ * @param {import('express').Response} res - Express response.
+ */
 router.post("/:id/status", async (req, res) => {
   try {
     const { status, rca } = req.body;

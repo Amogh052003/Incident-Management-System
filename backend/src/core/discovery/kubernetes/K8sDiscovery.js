@@ -14,6 +14,13 @@ const {
   addDependency,
 } = require("../../topology/dependencyStore");
 
+/**
+ * Finds a registered resource whose runtime selector occurs in a pod name.
+ *
+ * @param {string} podName - Kubernetes pod name.
+ * @param {Object} resources - Resources keyed by ID.
+ * @returns {string|null} Matching resource ID, or `null`.
+ */
 function matchPodToResource(podName, resources) {
   for (const [id, resource] of Object.entries(resources)) {
     if (!resource.runtimeSelector) continue;
@@ -24,6 +31,11 @@ function matchPodToResource(podName, resources) {
   return null;
 }
 
+/**
+ * Lists Kubernetes pods, services, and deployments and registers discovered resources and edges.
+ *
+ * @returns {Promise<Object>} Normalized discovery data plus raw pods.
+ */
 async function discoverCluster() {
   if (!clusterReady) {
     return { pods: [], services: [], deployments: [] };

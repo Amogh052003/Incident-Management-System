@@ -138,6 +138,11 @@ function IncidentWorkspace({ id, onClose }) {
   );
 }
 
+/**
+ * Renders the incident queue and selected incident workspace.
+ *
+ * @returns {JSX.Element} Incident queue view.
+ */
 export default function IncidentsView() {
   const { incidents, loading } = useIncidents();
   const [selectedId, setSelectedId] = useState(null);

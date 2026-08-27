@@ -6,6 +6,11 @@ const {
   getDependencies,
 } = require("./dependencyStore");
 
+/**
+ * Builds a graph containing every registered resource and its known dependencies.
+ *
+ * @returns {Object<string, string[]>} Resource dependency graph.
+ */
 function buildTopologyGraph() {
   const resources =
     getResources();

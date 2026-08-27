@@ -3,6 +3,11 @@ const redis = require("../db/redis");
 
 const LIST_CACHE_KEY = "integrations:list";
 
+/**
+ * Returns integrations from Redis when cached, otherwise reads and caches them from PostgreSQL.
+ *
+ * @returns {Promise<Array<Object>>} Integrations ordered by name.
+ */
 async function getIntegrations() {
   const cached = await redis.get(LIST_CACHE_KEY);
   if (cached) return JSON.parse(cached);
@@ -14,11 +19,25 @@ async function getIntegrations() {
   return res.rows;
 }
 
+/**
+ * Retrieves one integration by name from PostgreSQL.
+ *
+ * @param {string} name - Integration name.
+ * @returns {Promise<Object|null>} Matching integration or `null`.
+ */
 async function getIntegrationByName(name) {
   const res = await pgPool.query("SELECT * FROM integrations WHERE name = $1", [name]);
   return res.rows[0] || null;
 }
 
+/**
+ * Inserts or updates an integration and clears the integrations list cache.
+ *
+ * @param {string} name - Integration name.
+ * @param {Object} config - Configuration stored as JSON.
+ * @param {*} [status] - Status to store, or the existing status on update.
+ * @returns {Promise<Object>} Inserted or updated row.
+ */
 async function upsertIntegration(name, config, status) {
   const existing = await getIntegrationByName(name);
   if (existing) {
@@ -37,6 +56,11 @@ async function upsertIntegration(name, config, status) {
   return res.rows[0];
 }
 
+/**
+ * Inserts the built-in integration rows when the table is empty.
+ *
+ * @returns {Promise<void>} Resolves after seeding or when existing rows are found.
+ */
 async function seedIntegrations() {
   const existing = await pgPool.query("SELECT COUNT(*) FROM integrations");
   if (parseInt(existing.rows[0].count) > 0) return;

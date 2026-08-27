@@ -4,6 +4,13 @@ import { STATUS_COLORS } from "./statusColors";
 const NODE_WIDTH = 180;
 const NODE_HEIGHT = 50;
 
+/**
+ * Lays out topology resources with Dagre and converts them to React Flow nodes.
+ *
+ * @param {Object} [state={}] - Resource state keyed by ID.
+ * @param {Object} [graph={}] - Dependency graph keyed by source ID.
+ * @returns {Array<Object>} React Flow node definitions.
+ */
 export function buildNodes(state = {}, graph = {}) {
   const g = new dagre.graphlib.Graph();
   g.setGraph({ rankdir: "LR", nodesep: 40, ranksep: 150, marginx: 40, marginy: 40 });

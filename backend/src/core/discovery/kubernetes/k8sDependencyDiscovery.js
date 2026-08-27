@@ -6,12 +6,24 @@ const {
   addDependency,
 } = require("../../topology/dependencyStore");
 
+/**
+ * Extracts a host-like value from a supported connection string.
+ *
+ * @param {*} value - Value that may contain a URI or hostname.
+ * @returns {string|null} Extracted host or `null`.
+ */
 function extractHost(value) {
   if (!value) return null;
   const match = value.match(/(?:postgres:\/\/|redis:\/\/|http:\/\/|https:\/\/)?([^:/]+)/i);
   return match?.[1] || null;
 }
 
+/**
+ * Infers dependency edges from environment variables in discovered Kubernetes pods.
+ *
+ * @param {Array<Object>} discoveredPods - Normalized pod summaries.
+ * @returns {Promise<number>} Number of dependency edges inferred.
+ */
 async function discoverK8sDependencies(discoveredPods) {
   console.log("[K8S-DEPS] Discovering dependencies from pod env vars");
 

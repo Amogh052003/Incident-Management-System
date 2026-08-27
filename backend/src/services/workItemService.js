@@ -1,5 +1,11 @@
 const { pgPool } = require("../db/postgres");
 
+/**
+ * Selects a severity from component name substrings.
+ *
+ * @param {string} component_id - Component identifier to inspect.
+ * @returns {string} `P0`, `P1`, or `P2` based on the matching component category.
+ */
 function getSeverity(component_id) {
   // P0 for critical components
   if (component_id.includes('database') || component_id.includes('payment') || component_id.includes('auth')) {
@@ -13,6 +19,12 @@ function getSeverity(component_id) {
   return 'P2';
 }
 
+/**
+ * Inserts a work item with a derived severity and current timestamps.
+ *
+ * @param {string} component_id - Component associated with the work item.
+ * @returns {Promise<number>} The inserted work item ID.
+ */
 async function createWorkItem(component_id) {
   const severity = getSeverity(component_id);
 

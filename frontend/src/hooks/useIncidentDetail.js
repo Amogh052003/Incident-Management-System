@@ -1,5 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
 
+/**
+ * Loads an incident and its logs and exposes a status-update operation.
+ *
+ * @param {*} id - Incident ID used in API paths.
+ * @returns {Object} Incident detail state, logs, loading state, update function, and refetch function.
+ */
 export function useIncidentDetail(id) {
   const [incident, setIncident] = useState(null);
   const [logs, setLogs] = useState([]);

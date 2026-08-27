@@ -3,6 +3,11 @@ import { io } from "socket.io-client";
 
 const SOCKET_URL = window.location.origin;
 
+/**
+ * Fetches active incidents and refreshes them when an incident-created socket event arrives.
+ *
+ * @returns {Object} Incident data, severity counts, loading state, and a refetch function.
+ */
 export function useIncidents() {
   const [incidents, setIncidents] = useState([]);
   const [loading, setLoading] = useState(true);

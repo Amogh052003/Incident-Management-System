@@ -1,3 +1,9 @@
+/**
+ * Converts a dependency graph into animated React Flow edges.
+ *
+ * @param {Object} [graph={}] - Dependency targets keyed by source ID.
+ * @returns {Array<Object>} React Flow edge definitions.
+ */
 export function buildEdges(graph = {}) {
   const edges = [];
 

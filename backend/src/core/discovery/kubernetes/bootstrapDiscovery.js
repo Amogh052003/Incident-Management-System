@@ -2,6 +2,11 @@ const {
   discoverCluster,
 } = require("./K8sDiscovery");
 
+/**
+ * Runs Kubernetes discovery and converts failures into an empty discovery result.
+ *
+ * @returns {Promise<Object>} Discovered pods, services, and deployments.
+ */
 async function bootstrapK8sDiscovery() {
   try {
     const data = await discoverCluster();

@@ -1,5 +1,11 @@
 let io = null;
 
+/**
+ * Creates the Socket.IO server and logs client connections and disconnections.
+ *
+ * @param {Object} server - HTTP server passed to Socket.IO.
+ * @returns {void}
+ */
 function initializeSocket(server) {
   const { Server } = require("socket.io");
 
@@ -20,6 +26,11 @@ function initializeSocket(server) {
   console.log("[SOCKET] Realtime server initialized");
 }
 
+/**
+ * Returns the initialized Socket.IO server instance.
+ *
+ * @returns {Object|null} Socket.IO instance or `null` before initialization.
+ */
 function getIO() {
   return io;
 }

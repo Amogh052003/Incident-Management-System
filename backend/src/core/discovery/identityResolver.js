@@ -2,6 +2,12 @@ const {
   getResources,
 } = require("../resources/resourceRegistry");
 
+/**
+ * Resolves a runtime hostname to a registered resource using aliases and DNS prefixes.
+ *
+ * @param {string} name - Runtime hostname or alias.
+ * @returns {string|null} Matching resource ID, or `null` when unresolved.
+ */
 function resolveIdentity(name) {
   if (!name) return null;
 

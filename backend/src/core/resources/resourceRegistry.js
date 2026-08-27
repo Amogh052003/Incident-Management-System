@@ -1,5 +1,11 @@
 const resources = require("./resourceStore");
 
+/**
+ * Adds or replaces a resource in the shared registry and initializes its health.
+ *
+ * @param {Object} resource - Resource object containing an `id` property.
+ * @returns {void}
+ */
 function registerResource(resource) {
   resources[resource.id] = {
     ...resource,
@@ -17,6 +23,13 @@ function registerResource(resource) {
   );
 }
 
+/**
+ * Updates a registered resource's health status and update timestamp.
+ *
+ * @param {string} id - Resource identifier.
+ * @param {string} status - New health status.
+ * @returns {void}
+ */
 function updateResourceHealth(
   id,
   status
@@ -39,10 +52,22 @@ function updateResourceHealth(
   );
 }
 
+/**
+ * Returns the shared resource registry object.
+ *
+ * @returns {Object} Resources keyed by resource identifier.
+ */
 function getResources() {
   return resources;
 }
 
+/**
+ * Associates a runtime instance with a registered resource if not already linked.
+ *
+ * @param {string} resourceId - Resource identifier.
+ * @param {string} instanceId - Runtime instance identifier.
+ * @returns {void}
+ */
 function linkRuntimeInstance(
   resourceId,
   instanceId

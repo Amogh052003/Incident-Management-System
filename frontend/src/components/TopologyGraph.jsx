@@ -5,6 +5,11 @@ import "reactflow/dist/style.css";
 import { buildNodes } from "./topology/buildNodes";
 import { buildEdges } from "./topology/buildEdges";
 
+/**
+ * Loads topology data, subscribes to realtime updates, and renders a React Flow graph.
+ *
+ * @returns {JSX.Element} Topology graph container.
+ */
 export default function TopologyGraph() {
   const [nodes, setNodes] = useState([]);
   const [edges, setEdges] = useState([]);

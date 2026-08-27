@@ -6,6 +6,12 @@ class P0Strategy extends AlertStrategy {
     this.severity = 'P0';
   }
 
+  /**
+   * Logs a critical alert and simulated immediate paging.
+   *
+   * @param {Object} context - Alert context containing component and message fields.
+   * @returns {void}
+   */
   sendAlert(context) {
     console.log("P0 ALERT: CRITICAL FAILURE");
     console.log(`Component: ${context.component_id}`);

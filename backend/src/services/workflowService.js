@@ -3,6 +3,18 @@ const { getState } = require("../states/stateFactory");
 const redis = require("../db/redis");
 const { invalidateDashboardListCaches } = require("./dashboardService");
 
+/**
+ * Applies a state transition to a PostgreSQL work item in a transaction.
+ *
+ * The transition update and work-item log are committed together, followed by
+ * dashboard cache invalidation after the transaction succeeds.
+ *
+ * @param {number} id - Work item ID.
+ * @param {string} newStatus - Requested status.
+ * @param {Object} [data={}] - Additional transition data, including optional RCA data.
+ * @returns {Promise<string>} A status update message after commit.
+ * @throws {Error} When the work item is missing or the transition fails.
+ */
 async function updateStatus(id, newStatus, data = {}) {
   const client = await pgPool.connect();
 

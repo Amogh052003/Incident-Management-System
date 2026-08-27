@@ -22,6 +22,15 @@ function timeAgo(iso) {
   return `${hrs}h ${mins % 60}m ago`;
 }
 
+/**
+ * Renders one incident summary card.
+ *
+ * @param {Object} props - Component properties.
+ * @param {Object} props.incident - Incident data displayed by the card.
+ * @param {Function} [props.onClick] - Callback receiving the incident ID.
+ * @param {boolean} [props.selected] - Whether the card is selected.
+ * @returns {JSX.Element} Incident card.
+ */
 export default function IncidentCard({ incident, onClick, selected }) {
   const sev = SEVERITY_CONFIG[incident.severity] || SEVERITY_CONFIG.P2;
 

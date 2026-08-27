@@ -14,6 +14,14 @@ const {
 const {
   initializeTopology,
 } = require("../core/topology/topologyServices");
+/**
+ * Connects to MongoDB, consumes JSON signals from Redis, stores raw payloads,
+ * and passes valid signals to the signal processor.
+ *
+ * The worker continues consuming after malformed messages or processing errors.
+ *
+ * @returns {Promise<never>} Runs continuously while the worker is active.
+ */
 async function startWorker() {
   await connectMongo();
 

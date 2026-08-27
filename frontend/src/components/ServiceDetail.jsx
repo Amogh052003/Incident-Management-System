@@ -28,6 +28,14 @@ function formatBytes(bytes) {
   return `${val.toFixed(1)} ${units[i]}`;
 }
 
+/**
+ * Loads and displays service status, metrics, logs, and dependencies.
+ *
+ * @param {Object} props - Component properties.
+ * @param {string} props.name - Service name used in API requests.
+ * @param {Function} props.onClose - Callback for closing the detail panel.
+ * @returns {JSX.Element|null} Service detail panel, or `null` without a name.
+ */
 export default function ServiceDetail({ name, onClose }) {
   const [service, setService] = useState(null);
   const [logs, setLogs] = useState([]);

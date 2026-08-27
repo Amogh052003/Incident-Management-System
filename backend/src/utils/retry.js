@@ -1,3 +1,12 @@
+/**
+ * Runs an asynchronous operation again after failures using exponential backoff.
+ *
+ * @param {Function} fn - Operation to invoke.
+ * @param {number} [retries=3] - Maximum number of attempts.
+ * @param {number} [delay=100] - Initial delay in milliseconds.
+ * @returns {Promise<*>} The value returned by the successful operation.
+ * @throws {*} The error from the final failed attempt.
+ */
 async function retry(fn, retries = 3, delay = 100) {
     let attempt = 0;
   

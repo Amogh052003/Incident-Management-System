@@ -5,6 +5,11 @@ function cacheKey(id) { return `plugin:${id}`; }
 const LIST_CACHE_KEY = "plugins:list";
 const ACTIVITY_CACHE_KEY = "plugin:activity";
 
+/**
+ * Retrieves plugin rows, normalizing a missing subscribed-event list to an empty array.
+ *
+ * @returns {Promise<Array<Object>>} Plugins ordered by name.
+ */
 async function getPlugins() {
   const cached = await redis.get(LIST_CACHE_KEY);
   if (cached) return JSON.parse(cached);
@@ -20,6 +25,12 @@ async function getPlugins() {
   return plugins;
 }
 
+/**
+ * Retrieves one plugin by ID, using a short-lived Redis cache.
+ *
+ * @param {*} id - Plugin ID.
+ * @returns {Promise<Object|null>} Matching plugin or `null`.
+ */
 async function getPluginById(id) {
   const cached = await redis.get(cacheKey(id));
   if (cached) return JSON.parse(cached);
@@ -31,6 +42,13 @@ async function getPluginById(id) {
   return plugin;
 }
 
+/**
+ * Updates permitted plugin columns and clears the plugin caches.
+ *
+ * @param {*} id - Plugin ID.
+ * @param {Object} updates - Candidate column values; unsupported keys are ignored.
+ * @returns {Promise<Object|null>} Updated row, or `null` when no permitted updates exist or the row is absent.
+ */
 async function updatePlugin(id, updates) {
   const sets = [];
   const values = [];
@@ -56,6 +74,11 @@ async function updatePlugin(id, updates) {
   return res.rows[0] || null;
 }
 
+/**
+ * Inserts default plugin rows when the plugin table is empty.
+ *
+ * @returns {Promise<void>} Resolves after seeding or when existing rows are found.
+ */
 async function seedPlugins() {
   const existing = await pgPool.query("SELECT COUNT(*) FROM plugins");
   if (parseInt(existing.rows[0].count) > 0) return;
@@ -76,6 +99,12 @@ async function seedPlugins() {
   }
 }
 
+/**
+ * Retrieves recent plugin activity, using a short-lived Redis cache.
+ *
+ * @param {number} [limit=20] - Maximum number of activity rows.
+ * @returns {Promise<Array<Object>>} Recent activity rows.
+ */
 async function getActivityFeed(limit = 20) {
   const cached = await redis.get(ACTIVITY_CACHE_KEY);
   if (cached) return JSON.parse(cached).slice(0, limit);
@@ -88,6 +117,14 @@ async function getActivityFeed(limit = 20) {
   return res.rows;
 }
 
+/**
+ * Inserts a plugin activity row and clears the activity cache.
+ *
+ * @param {string} pluginName - Plugin name.
+ * @param {string} action - Activity action.
+ * @param {*} [details] - Optional activity details.
+ * @returns {Promise<void>} Resolves after the insert and cache deletion.
+ */
 async function logPluginActivity(pluginName, action, details) {
   await pgPool.query(
     "INSERT INTO plugin_activity (plugin_name, action, details) VALUES ($1, $2, $3)",

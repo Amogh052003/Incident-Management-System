@@ -4,6 +4,11 @@ import TopologyGraph from "../components/TopologyGraph";
 
 const FILTERS = ["All", "prod-us-east", "staging", "kube-system", "payments"];
 
+/**
+ * Renders the topology view with filters and an optional service detail panel.
+ *
+ * @returns {JSX.Element} Topology view.
+ */
 export default function TopologyView() {
   const [activeFilter, setActiveFilter] = useState("All");
   const [selectedService, setSelectedService] = useState(null);

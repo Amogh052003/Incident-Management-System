@@ -14,10 +14,24 @@ const VALID_TRANSITIONS = {
   stopped: ["healthy"],
 };
 
+/**
+ * Checks whether a resource health status transition is allowed.
+ *
+ * @param {string} from - Current status.
+ * @param {string} to - Proposed status.
+ * @returns {boolean} Whether the transition is listed as valid.
+ */
 function canTransition(from, to) {
   return VALID_TRANSITIONS[from]?.includes(to);
 }
 
+/**
+ * Applies a valid health transition and updates resource timestamps.
+ *
+ * @param {Object} resource - Resource with an optional `health` object.
+ * @param {string} newStatus - Target health status.
+ * @returns {boolean} Whether the transition was applied.
+ */
 function transitionResource(resource, newStatus) {
   if (!resource.health) {
     resource.health = {};

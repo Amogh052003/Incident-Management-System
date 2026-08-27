@@ -14,6 +14,14 @@ const {
   publish,
 } = require("../core/distributed/publisher");
 
+/**
+ * Debounces a signal by component, reuses or creates an open work item, stores the signal,
+ * updates Redis metrics and caches, and emits local and distributed events.
+ *
+ * @param {Object} signal - Signal containing `component_id` and `message` fields.
+ * @returns {Promise<void>} Resolves after processing and event publication complete.
+ * @throws {Error} When no work item can be found or a processing operation fails.
+ */
 async function processSignal(signal) {
   const { component_id, message } = signal;
 

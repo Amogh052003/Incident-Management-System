@@ -12,6 +12,11 @@ import IntegrationsView from "./views/IntegrationsView";
 import SettingsView from "./views/SettingsView";
 import { useIncidents } from "./hooks/useIncidents";
 
+/**
+ * Renders the application shell and switches between the available views.
+ *
+ * @returns {JSX.Element} Application layout.
+ */
 export default function App() {
   const { incidents, loading, p0Count, p1Count, totalActive } = useIncidents();
   const [activeView, setActiveView] = useState("overview");

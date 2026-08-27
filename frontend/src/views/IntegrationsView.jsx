@@ -4,6 +4,11 @@ import { Link, MessageSquare, GitPullRequest, BookOpen, Database, Activity, Chec
 
 const ICON_MAP = { MessageSquare, GitPullRequest, BookOpen, Activity, Database };
 
+/**
+ * Loads and renders the configured integrations list.
+ *
+ * @returns {JSX.Element} Integrations view.
+ */
 export default function IntegrationsView() {
   const [integrations, setIntegrations] = useState([]);
 

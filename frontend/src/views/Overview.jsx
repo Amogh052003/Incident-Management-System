@@ -59,6 +59,11 @@ function useRealtimeFeed() {
   return entries;
 }
 
+/**
+ * Renders the overview dashboard with health, topology, incidents, and event feed.
+ *
+ * @returns {JSX.Element} Overview dashboard.
+ */
 export default function Overview() {
   const { incidents, loading, p0Count, p1Count, totalActive } = useIncidents();
   const { graph, topologyState } = useTopology();

@@ -7,6 +7,12 @@ const {
   buildTopologyGraph,
 } = require("./topologyGraph");
 
+/**
+ * Marks resources that depend transitively on a failed service as degraded.
+ *
+ * @param {string} failedService - Resource from which impact propagation starts.
+ * @returns {string[]} IDs of resources reached through dependency edges.
+ */
 function propagateImpact(
   failedService
 ) {

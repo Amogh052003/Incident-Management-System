@@ -12,6 +12,11 @@ const DASHBOARD_LIST_CACHE_KEYS = [
   "dashboard:status:CLOSED",
 ];
 
+/**
+ * Deletes cached dashboard incident lists.
+ *
+ * @returns {Promise<number>} Redis deletion result.
+ */
 async function invalidateDashboardListCaches() {
   if (DASHBOARD_LIST_CACHE_KEYS.length > 0) {
     await redis.del(...DASHBOARD_LIST_CACHE_KEYS);
@@ -19,6 +24,15 @@ async function invalidateDashboardListCaches() {
 }
 
 // 🔥 GET ALL INCIDENTS WITH STATUS FILTER
+/**
+ * Retrieves incidents with optional status filtering and signal counts.
+ *
+ * Results are read from or written to Redis; missing signal counts may be
+ * supplemented from MongoDB when its connection is ready.
+ *
+ * @param {string} [statusFilter="ACTIVE"] - `ACTIVE`, `ALL`, or a work-item status.
+ * @returns {Promise<Array<Object>>} Incident rows with `signal_count` values.
+ */
 async function getActiveIncidents(statusFilter = "ACTIVE") {
   // statusFilter: "ALL", "ACTIVE" (default), or specific status like "OPEN", "RESOLVED", "CLOSED"
   let cacheKey;
@@ -97,6 +111,13 @@ async function getActiveIncidents(statusFilter = "ACTIVE") {
 }
 
 // GET INCIDENT DETAILS
+/**
+ * Retrieves one incident and its signal count from PostgreSQL, Redis, or MongoDB.
+ *
+ * @param {*} id - Work item ID used in database and cache keys.
+ * @returns {Promise<Object>} Incident row with `signal_count`.
+ * @throws {Error} When no work item matches the ID.
+ */
 async function getIncidentById(id) {
   const cacheKey = `dashboard:incident:${id}`;
 
@@ -143,6 +164,13 @@ async function getIncidentById(id) {
 }
 
 // 🔥 GET INCIDENT LOGS/SIGNALS
+/**
+ * Retrieves recent MongoDB signals for an incident and caches the result.
+ *
+ * @param {*} id - Work item ID stored on signal documents.
+ * @param {number} [limit=50] - Maximum number of signals.
+ * @returns {Promise<Array<Object>>} Recent signal log entries, or an empty array when unavailable.
+ */
 async function getIncidentLogs(id, limit = 50) {
   const cacheKey = `dashboard:logs:${id}:${limit}`;
 
