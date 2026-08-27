@@ -8,7 +8,7 @@ const SOURCE_FILE = path.join(
 
 const OUTPUT_FILE = path.join(
   __dirname,
-  "../docs/reference/audit-api.mdx"
+  "../docs/reference/audit-api.md"
 );
 
 const source = fs.readFileSync(SOURCE_FILE, "utf8");

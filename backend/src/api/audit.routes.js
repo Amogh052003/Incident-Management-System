@@ -5,14 +5,15 @@ const router = express.Router();
 /**
  * Create an audit log entry.
  *
+ * @docId audit.createLog
  * @route POST /audit/log
  * @description Records an event in the audit log.
  *
  * @body event_type string required - Type of event being recorded.
- * @body component string - Component associated with the event.
- * @body severity string - Severity of the event.
- * @body message string - Human-readable description.
- * @body metadata object - Additional structured metadata.
+ * @body component string optional - Component associated with the event.
+ * @body severity string optional - Severity of the event.
+ * @body message string optional - Human-readable description of the event.
+ * @body metadata object optional - Additional structured metadata.
  *
  * @response 201 - Audit event successfully logged.
  * @response 400 - event_type was not provided.
