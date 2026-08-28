@@ -4,27 +4,30 @@ on:
   push:
     branches:
       - main
-    paths:
-      - "backend/**"
+
   pull_request:
     branches:
       - main
 
 jobs:
   generate-docs:
-    name: Generate API and Code Documentation
+    name: Generate Documentation
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
 
     defaults:
       run:
         working-directory: backend
 
     steps:
-      # 1. Checkout repository
+
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      # 2. Setup Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -32,32 +35,82 @@ jobs:
           cache: npm
           cache-dependency-path: backend/package-lock.json
 
-      # 3. Install dependencies
       - name: Install dependencies
         run: npm ci
 
-      # 4. Generate OpenAPI specification
-      - name: Generate OpenAPI specification
-        run: npm run docs:openapi
+      # --------------------------------------------------
+      # Detect what changed
+      # --------------------------------------------------
 
-      # 5. Generate JavaScript documentation
-      - name: Generate JSDoc documentation
+      - name: Detect changed files
+        id: changes
+        working-directory: .
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git diff --name-only \
+              "${{ github.event.pull_request.base.sha }}" \
+              "${{ github.event.pull_request.head.sha }}" \
+              > changed-files.txt
+          else
+            git diff --name-only \
+              "${{ github.event.before }}" \
+              "${{ github.sha }}" \
+              > changed-files.txt
+          fi
+
+          echo "Changed files:"
+          cat changed-files.txt
+
+          if grep -q '^backend/src/.*\.js$' changed-files.txt; then
+            echo "js_changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "js_changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+          if grep -q '^backend/src/api/.*\.js$' changed-files.txt; then
+            echo "api_changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "api_changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # --------------------------------------------------
+      # Generate JavaScript documentation
+      # --------------------------------------------------
+
+      - name: Generate JavaScript documentation
+        if: steps.changes.outputs.js_changed == 'true'
         run: npm run docs:jsdoc
 
-      # 6. Show generated documentation
-      - name: Show generated documentation
+      # --------------------------------------------------
+      # Generate OpenAPI
+      # --------------------------------------------------
+
+      - name: Generate OpenAPI specification
+        if: steps.changes.outputs.api_changed == 'true'
+        run: npm run openapi:generate
+
+      # --------------------------------------------------
+      # Show generated documentation
+      # --------------------------------------------------
+
+      - name: Show documentation changes
+        working-directory: .
         run: |
-          echo "Generated documentation:"
-          find docs -type f
-          
-      # 7. Commit generated documentation
+          echo "Documentation changes:"
+          git status --short
+
+      # --------------------------------------------------
+      # Commit generated documentation
+      # --------------------------------------------------
+
       - name: Commit generated documentation
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        working-directory: .
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add docs/
+          git add backend/docs/
 
           if git diff --cached --quiet; then
             echo "No documentation changes."

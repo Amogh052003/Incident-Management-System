@@ -1,4 +1,5 @@
 const swaggerJSDoc = require("swagger-jsdoc");
+const path = require("path");
 
 const options = {
   definition: {
@@ -7,8 +8,7 @@ const options = {
     info: {
       title: "Incident Management System API",
       version: "1.0.0",
-      description:
-        "API reference for the Incident Management System."
+      description: "API reference for the Incident Management System."
     },
 
     servers: [
@@ -29,32 +29,24 @@ const options = {
       schemas: {
         AuditLogRequest: {
           type: "object",
-
-          required: [
-            "event_type"
-          ],
-
+          required: ["event_type"],
           properties: {
             event_type: {
               type: "string",
               description: "Type of event being recorded."
             },
-
             component: {
               type: "string",
               description: "Component associated with the event."
             },
-
             severity: {
               type: "string",
               description: "Severity of the event."
             },
-
             message: {
               type: "string",
               description: "Human-readable description of the event."
             },
-
             metadata: {
               type: "object",
               description: "Additional structured metadata.",
@@ -65,36 +57,29 @@ const options = {
 
         AuditLog: {
           type: "object",
-
           properties: {
             id: {
               type: "integer"
             },
-
             event_type: {
               type: "string"
             },
-
             component: {
               type: "string",
               nullable: true
             },
-
             severity: {
               type: "string",
               nullable: true
             },
-
             message: {
               type: "string",
               nullable: true
             },
-
             metadata: {
               type: "object",
               additionalProperties: true
             },
-
             created_at: {
               type: "string",
               format: "date-time"
@@ -106,7 +91,7 @@ const options = {
   },
 
   apis: [
-    "./src/api/*.js"
+    path.join(__dirname, "src/api/*.js")
   ]
 };
 

@@ -158,23 +158,56 @@ ${markdown.trim()}
 /**
  * Generates documentation for the repository.
  */
+
 async function main() {
   console.log("Starting JSDoc documentation generation...");
 
-  cleanGeneratedDocumentation();
+  const requestedFiles = process.argv.slice(2);
 
-  const files = findJavaScriptFiles(SOURCE_DIR).filter((file) => {
-    const relative = path
-      .relative(SOURCE_DIR, file)
-      .replace(/\\/g, "/");
+  let files;
 
-    // API routes are documented by OpenAPI, not this JSDoc pipeline.
-    return !relative.startsWith("api/");
-  });
+  if (requestedFiles.length > 0) {
+    // Incremental generation:
+    // generate only the files explicitly supplied by CI.
+    files = requestedFiles.map((file) =>
+      path.resolve(ROOT_DIR, file)
+    );
+  } else {
+    // Full generation:
+    // clean previously generated documentation first,
+    // then regenerate everything.
+    cleanGeneratedDocumentation();
+
+    files = findJavaScriptFiles(SOURCE_DIR);
+  }
 
   let generated = 0;
 
   for (const sourceFile of files) {
+    if (!sourceFile.startsWith(SOURCE_DIR)) {
+      console.warn(
+        `Skipping file outside src/: ${sourceFile}`
+      );
+      continue;
+    }
+
+    const relativeSource = path
+      .relative(SOURCE_DIR, sourceFile)
+      .replace(/\\/g, "/");
+
+    // API routes are handled by OpenAPI.
+    if (relativeSource.startsWith("api/")) {
+      continue;
+    }
+
+    // Source file may have been deleted.
+    if (!fs.existsSync(sourceFile)) {
+      console.log(
+        `Source file no longer exists, skipping: ${sourceFile}`
+      );
+      continue;
+    }
+
     if (await generateDocumentation(sourceFile)) {
       generated++;
     }
@@ -184,9 +217,3 @@ async function main() {
     `Generated ${generated} documentation files.`
   );
 }
-
-main().catch((error) => {
-  console.error("Documentation generation failed:");
-  console.error(error);
-  process.exit(1);
-});

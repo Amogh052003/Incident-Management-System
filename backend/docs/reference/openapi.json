@@ -82,6 +82,891 @@
     }
   },
   "paths": {
+    "/workitem/{id}/status": {
+      "post": {
+        "summary": "Update work-item status",
+        "description": "Validates and applies a work-item status transition.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "status"
+                ],
+                "properties": {
+                  "status": {
+                    "type": "string"
+                  },
+                  "rca": {
+                    "type": "object",
+                    "properties": {
+                      "root_cause": {
+                        "type": "string"
+                      },
+                      "fix": {
+                        "type": "string"
+                      },
+                      "prevention": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Status updated."
+          },
+          "400": {
+            "description": "Invalid work-item ID, status, RCA, or status transition."
+          }
+        }
+      }
+    },
+    "/topology": {
+      "get": {
+        "summary": "Get service topology",
+        "description": "Returns the current topology graph and topology state.",
+        "responses": {
+          "200": {
+            "description": "Topology graph and state."
+          }
+        }
+      }
+    },
+    "/signal/": {
+      "post": {
+        "summary": "Queue a signal",
+        "description": "Validates and queues a signal payload for processing.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "component_id",
+                  "message"
+                ],
+                "properties": {
+                  "component_id": {
+                    "type": "string"
+                  },
+                  "message": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Signal accepted for processing."
+          },
+          "400": {
+            "description": "Required fields are missing, have invalid types, or exceed length limits."
+          },
+          "500": {
+            "description": "Signal could not be queued."
+          }
+        }
+      }
+    },
+    "/settings": {
+      "get": {
+        "summary": "List settings",
+        "responses": {
+          "200": {
+            "description": "Settings data."
+          },
+          "500": {
+            "description": "Failed to retrieve settings."
+          }
+        }
+      }
+    },
+    "/settings/{key}": {
+      "get": {
+        "summary": "Get a setting",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "key",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Setting data."
+          },
+          "404": {
+            "description": "Setting not found."
+          },
+          "500": {
+            "description": "Failed to retrieve the setting."
+          }
+        }
+      },
+      "put": {
+        "summary": "Set a setting",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "key",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "value": {},
+                  "category": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated setting data."
+          },
+          "500": {
+            "description": "Failed to update the setting."
+          }
+        }
+      }
+    },
+    "/services/{name}": {
+      "get": {
+        "summary": "Get service runtime information",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Service resource, topology, runtime, uptime, and metrics data."
+          },
+          "404": {
+            "description": "Service not found."
+          }
+        }
+      }
+    },
+    "/services/{name}/logs": {
+      "get": {
+        "summary": "Get service logs",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 50
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Combined container, Kubernetes, and audit log entries."
+          },
+          "404": {
+            "description": "Service not found."
+          }
+        }
+      }
+    },
+    "/repo-mappings": {
+      "get": {
+        "summary": "List repository mappings",
+        "responses": {
+          "200": {
+            "description": "Repository mapping data."
+          },
+          "500": {
+            "description": "Failed to retrieve repository mappings."
+          }
+        }
+      }
+    },
+    "/repo-mappings/{service}": {
+      "get": {
+        "summary": "Get a service repository mapping",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "service",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Repository mapping."
+          },
+          "404": {
+            "description": "Mapping not found."
+          },
+          "500": {
+            "description": "Failed to retrieve the mapping."
+          }
+        }
+      },
+      "post": {
+        "summary": "Set a service repository mapping",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "service",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "repo"
+                ],
+                "properties": {
+                  "repo": {
+                    "type": "string"
+                  },
+                  "namespace": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Repository mapping result."
+          },
+          "400": {
+            "description": "Repository is missing or the mapping is protected."
+          },
+          "500": {
+            "description": "Failed to set the mapping."
+          }
+        }
+      }
+    },
+    "/plugins": {
+      "get": {
+        "summary": "List plugins",
+        "responses": {
+          "200": {
+            "description": "Plugin data."
+          },
+          "500": {
+            "description": "Failed to retrieve plugins."
+          }
+        }
+      }
+    },
+    "/plugins/{id}": {
+      "get": {
+        "summary": "Get a plugin",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Plugin data."
+          },
+          "404": {
+            "description": "Plugin not found."
+          },
+          "500": {
+            "description": "Failed to retrieve the plugin."
+          }
+        }
+      },
+      "put": {
+        "summary": "Update a plugin",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated plugin data."
+          },
+          "404": {
+            "description": "Plugin not found."
+          },
+          "500": {
+            "description": "Failed to update the plugin."
+          }
+        }
+      }
+    },
+    "/plugins/activity/feed": {
+      "get": {
+        "summary": "Get plugin activity",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Plugin activity entries."
+          },
+          "500": {
+            "description": "Failed to retrieve plugin activity."
+          }
+        }
+      }
+    },
+    "/logs/search": {
+      "get": {
+        "summary": "Search logs",
+        "description": "Searches logs using optional text, time, source, severity, component, and paging filters.",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "from",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sources",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "severity",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "component",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paged log search results."
+          },
+          "500": {
+            "description": "Failed to search logs."
+          }
+        }
+      }
+    },
+    "/logs/filters": {
+      "get": {
+        "summary": "Get log filters",
+        "responses": {
+          "200": {
+            "description": "Available log filter values."
+          },
+          "500": {
+            "description": "Failed to retrieve log filters."
+          }
+        }
+      }
+    },
+    "/integrations": {
+      "get": {
+        "summary": "List integrations",
+        "responses": {
+          "200": {
+            "description": "Integration data."
+          },
+          "500": {
+            "description": "Failed to retrieve integrations."
+          }
+        }
+      }
+    },
+    "/integrations/{name}": {
+      "get": {
+        "summary": "Get an integration",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Integration data without its config field."
+          },
+          "404": {
+            "description": "Integration not found."
+          },
+          "500": {
+            "description": "Failed to retrieve the integration."
+          }
+        }
+      },
+      "put": {
+        "summary": "Create or update an integration",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "config": {
+                    "type": "object"
+                  },
+                  "status": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Integration data."
+          },
+          "500": {
+            "description": "Failed to update the integration."
+          }
+        }
+      }
+    },
+    "/github": {
+      "get": {
+        "summary": "Complete GitHub connection redirect",
+        "responses": {
+          "302": {
+            "description": "Redirects to the frontend with a connected query value."
+          }
+        }
+      }
+    },
+    "/github/install": {
+      "get": {
+        "summary": "Get GitHub installation information",
+        "responses": {
+          "200": {
+            "description": "Installation URL or existing installation information."
+          },
+          "500": {
+            "description": "Failed to retrieve GitHub installation information."
+          },
+          "503": {
+            "description": "GitHub App is not configured."
+          }
+        }
+      }
+    },
+    "/github/installation": {
+      "get": {
+        "summary": "Get connected GitHub installation",
+        "responses": {
+          "200": {
+            "description": "GitHub connection status and installation information when connected."
+          },
+          "500": {
+            "description": "Failed to retrieve the GitHub installation."
+          }
+        }
+      }
+    },
+    "/github/services": {
+      "get": {
+        "summary": "List services with repository mappings",
+        "responses": {
+          "200": {
+            "description": "Services, topology information, and repository mappings."
+          },
+          "500": {
+            "description": "Failed to retrieve GitHub service data."
+          }
+        }
+      }
+    },
+    "/github/workspace/{service}": {
+      "get": {
+        "summary": "Get GitHub workspace information for a service",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "service",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Service workspace, topology, incident, and repository data."
+          },
+          "404": {
+            "description": "Service not found."
+          },
+          "500": {
+            "description": "Failed to retrieve workspace information."
+          }
+        }
+      }
+    },
+    "/github/validate-repo": {
+      "post": {
+        "summary": "Validate repository access",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "repo"
+                ],
+                "properties": {
+                  "repo": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Repository access validation result."
+          },
+          "400": {
+            "description": "Repository is missing or GitHub is not connected."
+          },
+          "500": {
+            "description": "Failed to validate repository access."
+          }
+        }
+      }
+    },
+    "/github/issues": {
+      "post": {
+        "summary": "Create a GitHub issue",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "service",
+                  "title",
+                  "body"
+                ],
+                "properties": {
+                  "service": {
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": "string"
+                  },
+                  "body": {
+                    "type": "string"
+                  },
+                  "labels": {
+                    "type": "array"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Created issue information."
+          },
+          "400": {
+            "description": "Required fields are missing, GitHub is not connected, or no repository is mapped."
+          },
+          "500": {
+            "description": "Failed to create the GitHub issue."
+          }
+        }
+      }
+    },
+    "/github/issues/{incidentId}": {
+      "get": {
+        "summary": "Get issues linked to an incident",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "incidentId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Linked GitHub issue data."
+          },
+          "500": {
+            "description": "Failed to retrieve linked issues."
+          }
+        }
+      }
+    },
+    "/github/webhook": {
+      "post": {
+        "summary": "Receive a GitHub webhook",
+        "description": "Validates the optional webhook signature and processes the GitHub event payload.",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "x-hub-signature-256",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-github-event",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Webhook acknowledged, including when processing fails."
+          },
+          "401": {
+            "description": "Webhook signature is invalid."
+          }
+        }
+      }
+    },
+    "/incidents": {
+      "get": {
+        "summary": "List incidents",
+        "description": "Returns incidents filtered by the optional status query parameter.",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Status filter; defaults to ACTIVE."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Incident data."
+          },
+          "500": {
+            "description": "Failed to retrieve incidents."
+          }
+        }
+      }
+    },
+    "/incidents/{id}": {
+      "get": {
+        "summary": "Get an incident",
+        "description": "Returns the incident identified by the path parameter.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Incident data."
+          },
+          "404": {
+            "description": "Incident lookup failed or the incident was not found."
+          }
+        }
+      }
+    },
+    "/incidents/{id}/logs": {
+      "get": {
+        "summary": "Get incident signal logs",
+        "description": "Returns recent signal logs for the incident.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 50
+            },
+            "description": "Maximum number of logs to return."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Signal log data."
+          },
+          "500": {
+            "description": "Failed to retrieve logs."
+          }
+        }
+      }
+    },
     "/audit/log": {
       "post": {
         "summary": "Create an audit log entry",
