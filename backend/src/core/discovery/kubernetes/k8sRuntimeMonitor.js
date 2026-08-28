@@ -3,6 +3,13 @@ const { kc, clusterReady } = require("./K8sClient");
 const { registerResource, getResources, linkRuntimeInstance } = require("../../resources/resourceRegistry");
 const { propagateImpact } = require("../../topology/impactPropagation");
 
+/**
+ * Finds the resource whose runtime selector matches a Kubernetes pod name.
+ *
+ * @param {string} podName - Kubernetes pod name.
+ * @param {Object} resources - Resources keyed by resource ID.
+ * @returns {string|null} Matching resource ID, or null when none matches.
+ */
 function matchPodToResource(podName, resources) {
   for (const [id, resource] of Object.entries(resources)) {
     if (!resource.runtimeSelector) continue;
@@ -13,6 +20,11 @@ function matchPodToResource(podName, resources) {
   return null;
 }
 
+/**
+ * Starts watching Kubernetes pod events and updates discovered resources.
+ *
+ * @returns {Promise<*>} Kubernetes watch request, or null when monitoring is unavailable.
+ */
 async function initializeK8sRuntimeMonitor() {
   if (!clusterReady) {
     console.log("[K8S-RUNTIME] No cluster — runtime monitoring disabled");

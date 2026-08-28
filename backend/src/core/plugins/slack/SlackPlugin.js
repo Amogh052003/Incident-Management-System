@@ -8,6 +8,7 @@ const EVENTS = require(
   "../../core/events/eventTypes"
 );
 
+/** Plugin that sends incident-created notifications to Slack. */
 class SlackPlugin extends BasePlugin {
   /**
    * Creates a Slack plugin with the supplied webhook configuration.

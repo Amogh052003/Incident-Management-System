@@ -233,6 +233,10 @@ async function createIssue(installationId, repoFullName, title, body, labels = [
 /**
  * Stores a MongoDB link between an incident and a GitHub issue.
  *
+ * @param {*} incidentId - Incident identifier.
+ * @param {number} issueNumber - GitHub issue number.
+ * @param {string} repoFullName - Repository name in owner/name form.
+ * @param {string} service - Service associated with the issue.
  * @returns {Promise<Object>} Created issue-link document.
  */
 async function linkIssueToIncident(incidentId, issueNumber, repoFullName, service) {

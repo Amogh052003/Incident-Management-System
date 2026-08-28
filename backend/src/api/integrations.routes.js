@@ -3,6 +3,17 @@ const { getIntegrations, getIntegrationByName, upsertIntegration } = require("..
 
 const router = express.Router();
 
+/**
+ * @openapi
+ * /integrations:
+ *   get:
+ *     summary: List integrations
+ *     responses:
+ *       200:
+ *         description: Integration data.
+ *       500:
+ *         description: Failed to retrieve integrations.
+ */
 router.get("/integrations", async (req, res) => {
   try {
     const integrations = await getIntegrations();
@@ -12,6 +23,25 @@ router.get("/integrations", async (req, res) => {
   }
 });
 
+/**
+ * @openapi
+ * /integrations/{name}:
+ *   get:
+ *     summary: Get an integration
+ *     parameters:
+ *       - in: path
+ *         name: name
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Integration data without its config field.
+ *       404:
+ *         description: Integration not found.
+ *       500:
+ *         description: Failed to retrieve the integration.
+ */
 router.get("/integrations/:name", async (req, res) => {
   try {
     const integration = await getIntegrationByName(req.params.name);
@@ -23,6 +53,34 @@ router.get("/integrations/:name", async (req, res) => {
   }
 });
 
+/**
+ * @openapi
+ * /integrations/{name}:
+ *   put:
+ *     summary: Create or update an integration
+ *     parameters:
+ *       - in: path
+ *         name: name
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               config:
+ *                 type: object
+ *               status:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Integration data.
+ *       500:
+ *         description: Failed to update the integration.
+ */
 router.put("/integrations/:name", async (req, res) => {
   try {
     const { config, status } = req.body;

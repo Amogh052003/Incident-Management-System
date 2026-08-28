@@ -1,5 +1,6 @@
 const BaseState = require("./baseState");
 
+/** State representing a work item that cannot transition further. */
 class ClosedState extends BaseState {
   /**
    * Rejects all transitions from a closed work item.

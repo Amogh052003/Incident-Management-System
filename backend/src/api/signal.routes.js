@@ -3,6 +3,34 @@ const redis = require("../db/redis");
 
 const router = express.Router();
 
+/**
+ * @openapi
+ * /signal/:
+ *   post:
+ *     summary: Queue a signal
+ *     description: Validates and queues a signal payload for processing.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - component_id
+ *               - message
+ *             properties:
+ *               component_id:
+ *                 type: string
+ *               message:
+ *                 type: string
+ *     responses:
+ *       202:
+ *         description: Signal accepted for processing.
+ *       400:
+ *         description: Required fields are missing, have invalid types, or exceed length limits.
+ *       500:
+ *         description: Signal could not be queued.
+ */
 router.post("/", async (req, res) => {
   try {
     const { component_id, message } = req.body;

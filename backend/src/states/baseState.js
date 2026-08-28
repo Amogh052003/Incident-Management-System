@@ -1,3 +1,4 @@
+/** Base state implementation for work-item status transitions. */
 class BaseState {
   /**
    * Creates a state wrapper for a work item.

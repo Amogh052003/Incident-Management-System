@@ -2,6 +2,17 @@ const express = require("express");
 const { getServiceMapping, setManualMapping, listServicesWithRepo } = require("../services/githubService");
 const router = express.Router();
 
+/**
+ * @openapi
+ * /repo-mappings:
+ *   get:
+ *     summary: List repository mappings
+ *     responses:
+ *       200:
+ *         description: Repository mapping data.
+ *       500:
+ *         description: Failed to retrieve repository mappings.
+ */
 router.get("/repo-mappings", async (req, res) => {
   try {
     const mappings = await listServicesWithRepo();
@@ -11,6 +22,24 @@ router.get("/repo-mappings", async (req, res) => {
   }
 });
 
+/**
+ * @openapi
+ * /repo-mappings/{service}:
+ *   get:
+ *     summary: Get a service repository mapping
+ *     parameters:
+ *       - in: path
+ *         name: service
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: Repository mapping.
+ *       404:
+ *         description: Mapping not found.
+ *       500:
+ *         description: Failed to retrieve the mapping.
+ */
 router.get("/repo-mappings/:service", async (req, res) => {
   try {
     const mapping = await getServiceMapping(req.params.service);
@@ -21,6 +50,34 @@ router.get("/repo-mappings/:service", async (req, res) => {
   }
 });
 
+/**
+ * @openapi
+ * /repo-mappings/{service}:
+ *   post:
+ *     summary: Set a service repository mapping
+ *     parameters:
+ *       - in: path
+ *         name: service
+ *         required: true
+ *         schema: { type: string }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [repo]
+ *             properties:
+ *               repo: { type: string }
+ *               namespace: { type: string }
+ *     responses:
+ *       200:
+ *         description: Repository mapping result.
+ *       400:
+ *         description: Repository is missing or the mapping is protected.
+ *       500:
+ *         description: Failed to set the mapping.
+ */
 router.post("/repo-mappings/:service", async (req, res) => {
   try {
     const { repo, namespace } = req.body;

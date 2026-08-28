@@ -1,5 +1,6 @@
 const BaseState = require("./baseState");
 
+/** State for a work item that can transition to investigation. */
 class OpenState extends BaseState {
   /**
    * Moves an open work item to investigation.

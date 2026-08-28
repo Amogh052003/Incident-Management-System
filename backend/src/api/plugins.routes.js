@@ -3,6 +3,17 @@ const { getPlugins, getPluginById, updatePlugin, getActivityFeed, logPluginActiv
 
 const router = express.Router();
 
+/**
+ * @openapi
+ * /plugins:
+ *   get:
+ *     summary: List plugins
+ *     responses:
+ *       200:
+ *         description: Plugin data.
+ *       500:
+ *         description: Failed to retrieve plugins.
+ */
 router.get("/plugins", async (req, res) => {
   try {
     const plugins = await getPlugins();
@@ -12,6 +23,24 @@ router.get("/plugins", async (req, res) => {
   }
 });
 
+/**
+ * @openapi
+ * /plugins/{id}:
+ *   get:
+ *     summary: Get a plugin
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: Plugin data.
+ *       404:
+ *         description: Plugin not found.
+ *       500:
+ *         description: Failed to retrieve the plugin.
+ */
 router.get("/plugins/:id", async (req, res) => {
   try {
     const plugin = await getPluginById(req.params.id);
@@ -22,6 +51,29 @@ router.get("/plugins/:id", async (req, res) => {
   }
 });
 
+/**
+ * @openapi
+ * /plugins/{id}:
+ *   put:
+ *     summary: Update a plugin
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema: { type: object }
+ *     responses:
+ *       200:
+ *         description: Updated plugin data.
+ *       404:
+ *         description: Plugin not found.
+ *       500:
+ *         description: Failed to update the plugin.
+ */
 router.put("/plugins/:id", async (req, res) => {
   try {
     const plugin = await updatePlugin(req.params.id, req.body);
@@ -33,6 +85,21 @@ router.put("/plugins/:id", async (req, res) => {
   }
 });
 
+/**
+ * @openapi
+ * /plugins/activity/feed:
+ *   get:
+ *     summary: Get plugin activity
+ *     parameters:
+ *       - in: query
+ *         name: limit
+ *         schema: { type: integer, default: 20 }
+ *     responses:
+ *       200:
+ *         description: Plugin activity entries.
+ *       500:
+ *         description: Failed to retrieve plugin activity.
+ */
 router.get("/plugins/activity/feed", async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 20;

@@ -1,7 +1,14 @@
 const express = require("express");
-const { logEvent, getAuditLogs, getAuditComponents, getAuditSeverities } = require("../services/auditService");
+
+const {
+  logEvent,
+  getAuditLogs,
+  getAuditComponents,
+  getAuditSeverities,
+} = require("../services/auditService");
 
 const router = express.Router();
+
 /**
  * @openapi
  * /audit/log:
@@ -27,13 +34,30 @@ const router = express.Router();
 router.post("/audit/log", async (req, res) => {
   try {
     const { event_type, component, severity, message, metadata } = req.body;
-    if (!event_type) return res.status(400).json({ error: "event_type is required" });
-    await logEvent(event_type, { component, severity, message, metadata });
-    res.status(201).json({ status: "logged" });
+
+    if (!event_type) {
+      return res.status(400).json({
+        error: "event_type is required",
+      });
+    }
+
+    await logEvent(event_type, {
+      component,
+      severity,
+      message,
+      metadata,
+    });
+
+    res.status(201).json({
+      status: "logged",
+    });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({
+      error: err.message,
+    });
   }
 });
+
 /**
  * @openapi
  * /audit/logs:
@@ -79,6 +103,7 @@ router.post("/audit/log", async (req, res) => {
 router.get("/audit/logs", async (req, res) => {
   try {
     const { event_type, component, severity, limit, offset } = req.query;
+
     const logs = await getAuditLogs({
       eventType: event_type,
       component,
@@ -86,11 +111,15 @@ router.get("/audit/logs", async (req, res) => {
       limit: parseInt(limit) || 100,
       offset: parseInt(offset) || 0,
     });
+
     res.json(logs);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({
+      error: err.message,
+    });
   }
 });
+
 /**
  * @openapi
  * /audit/filters:
@@ -115,6 +144,7 @@ router.get("/audit/logs", async (req, res) => {
  *                   type: array
  *                   items:
  *                     type: string
+ *                 # NOTE: the following property will be adjusted if runtime output differs
  *       '500':
  *         description: Failed to retrieve audit filters.
  */
@@ -124,9 +154,15 @@ router.get("/audit/filters", async (req, res) => {
       getAuditComponents(),
       getAuditSeverities(),
     ]);
-    res.json({ components, severities });
+
+    res.json({
+      components,
+      severities,
+    });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({
+      error: err.message,
+    });
   }
 });
 

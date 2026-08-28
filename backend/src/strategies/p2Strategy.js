@@ -1,5 +1,6 @@
 const AlertStrategy = require("./alertStrategy");
 
+/** Alert strategy for non-critical P2 incidents. */
 class P2Strategy extends AlertStrategy {
   /**
    * Logs a non-critical alert and simulated email notification.

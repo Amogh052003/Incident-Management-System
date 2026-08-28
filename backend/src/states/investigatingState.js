@@ -1,5 +1,6 @@
 const BaseState = require("./baseState");
 
+/** State for a work item being investigated and prepared for resolution. */
 class InvestigatingState extends BaseState {
   /**
    * Resolves an investigating work item when complete RCA fields are provided.

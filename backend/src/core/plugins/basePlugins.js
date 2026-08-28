@@ -1,3 +1,4 @@
+/** Base implementation for application plugins. */
 class BasePlugin {
   /**
    * Creates a base plugin with its configuration and default name.

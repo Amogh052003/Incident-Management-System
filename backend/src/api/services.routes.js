@@ -162,6 +162,22 @@ async function getK8sPodMetrics(podName, pods) {
   }
 }
 
+/**
+ * @openapi
+ * /services/{name}:
+ *   get:
+ *     summary: Get service runtime information
+ *     parameters:
+ *       - in: path
+ *         name: name
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: Service resource, topology, runtime, uptime, and metrics data.
+ *       404:
+ *         description: Service not found.
+ */
 router.get("/services/:name", async (req, res) => {
   const { name } = req.params;
   const resources = getResources();
@@ -221,6 +237,26 @@ router.get("/services/:name", async (req, res) => {
   });
 });
 
+/**
+ * @openapi
+ * /services/{name}/logs:
+ *   get:
+ *     summary: Get service logs
+ *     parameters:
+ *       - in: path
+ *         name: name
+ *         required: true
+ *         schema: { type: string }
+ *       - in: query
+ *         name: limit
+ *         required: false
+ *         schema: { type: integer, default: 50 }
+ *     responses:
+ *       200:
+ *         description: Combined container, Kubernetes, and audit log entries.
+ *       404:
+ *         description: Service not found.
+ */
 router.get("/services/:name/logs", async (req, res) => {
   const { name } = req.params;
   const limit = parseInt(req.query.limit) || 50;

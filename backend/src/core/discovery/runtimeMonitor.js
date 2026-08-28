@@ -16,6 +16,13 @@ const docker = new Docker({
   socketPath: "/var/run/docker.sock",
 });
 
+/**
+ * Finds the resource whose runtime selector matches a container name.
+ *
+ * @param {string} containerName - Docker container name.
+ * @param {Object} resources - Resources keyed by resource ID.
+ * @returns {string|null} Matching resource ID, or null when none matches.
+ */
 function matchContainerToResource(
   containerName,
   resources
@@ -37,6 +44,12 @@ function matchContainerToResource(
   return null;
 }
 
+/**
+ * Extracts a container or Kubernetes pod name from a Docker event.
+ *
+ * @param {Object} event - Docker event object.
+ * @returns {string|null} Runtime name, or null when the event has no name.
+ */
 function getContainerName(event) {
   if (!event.Actor || !event.Actor.Attributes) return null;
 
@@ -47,6 +60,12 @@ function getContainerName(event) {
   );
 }
 
+/**
+ * Applies resource updates for a Docker container lifecycle event.
+ *
+ * @param {Object} event - Docker container event.
+ * @returns {Promise<void>} Resolves after the event is handled.
+ */
 async function handleContainerEvent(event) {
   const containerName = getContainerName(event);
 
@@ -115,6 +134,13 @@ async function handleContainerEvent(event) {
   }
 }
 
+/**
+ * Starts listening for relevant Docker container lifecycle events.
+ *
+ * Connection failures are logged and do not propagate to the caller.
+ *
+ * @returns {Promise<void>} Resolves after the Docker event stream is configured.
+ */
 async function initializeRuntimeMonitor() {
   try {
     const stream = await docker.getEvents();

@@ -1,5 +1,6 @@
 const BaseState = require("./baseState");
 
+/** State for a resolved work item awaiting closure. */
 class ResolvedState extends BaseState {
   /**
    * Closes a resolved work item.

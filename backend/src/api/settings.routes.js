@@ -3,6 +3,17 @@ const { getSettings, getSetting, setSetting } = require("../services/settingsSer
 
 const router = express.Router();
 
+/**
+ * @openapi
+ * /settings:
+ *   get:
+ *     summary: List settings
+ *     responses:
+ *       200:
+ *         description: Settings data.
+ *       500:
+ *         description: Failed to retrieve settings.
+ */
 router.get("/settings", async (req, res) => {
   try {
     const settings = await getSettings();
@@ -12,6 +23,24 @@ router.get("/settings", async (req, res) => {
   }
 });
 
+/**
+ * @openapi
+ * /settings/{key}:
+ *   get:
+ *     summary: Get a setting
+ *     parameters:
+ *       - in: path
+ *         name: key
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: Setting data.
+ *       404:
+ *         description: Setting not found.
+ *       500:
+ *         description: Failed to retrieve the setting.
+ */
 router.get("/settings/:key", async (req, res) => {
   try {
     const setting = await getSetting(req.params.key);
@@ -22,6 +51,31 @@ router.get("/settings/:key", async (req, res) => {
   }
 });
 
+/**
+ * @openapi
+ * /settings/{key}:
+ *   put:
+ *     summary: Set a setting
+ *     parameters:
+ *       - in: path
+ *         name: key
+ *         required: true
+ *         schema: { type: string }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               value: {}
+ *               category: { type: string }
+ *     responses:
+ *       200:
+ *         description: Updated setting data.
+ *       500:
+ *         description: Failed to update the setting.
+ */
 router.put("/settings/:key", async (req, res) => {
   try {
     const { value, category } = req.body;

@@ -6,10 +6,42 @@ const router = express.Router();
 const VALID_STATUSES = ["OPEN", "INVESTIGATING", "RESOLVED", "CLOSED"];
 
 /**
- * POST /workitem/:id/status: validates and applies a work-item status transition.
- *
- * @param {import('express').Request} req - Request containing ID and status/RCA body fields.
- * @param {import('express').Response} res - Express response.
+ * @openapi
+ * /workitem/{id}/status:
+ *   post:
+ *     summary: Update work-item status
+ *     description: Validates and applies a work-item status transition.
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - status
+ *             properties:
+ *               status:
+ *                 type: string
+ *               rca:
+ *                 type: object
+ *                 properties:
+ *                   root_cause:
+ *                     type: string
+ *                   fix:
+ *                     type: string
+ *                   prevention:
+ *                     type: string
+ *     responses:
+ *       200:
+ *         description: Status updated.
+ *       400:
+ *         description: Invalid work-item ID, status, RCA, or status transition.
  */
 router.post("/:id/status", async (req, res) => {
   try {

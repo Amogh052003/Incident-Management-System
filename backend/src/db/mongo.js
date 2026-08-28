@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 /**
  * Connects Mongoose to the configured MongoDB URL.
  *
- * @returns {Promise<import('mongoose').Mongoose>} Mongoose connection result.
+ * @returns {Promise<void>} Resolves when the MongoDB connection is established.
  */
 async function connectMongo() {
   const mongoUrl = process.env.MONGO_URL || "mongodb://localhost:27017/ims";

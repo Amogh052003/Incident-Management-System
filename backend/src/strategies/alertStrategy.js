@@ -1,3 +1,4 @@
+/** Base strategy for severity-specific alert handling. */
 class AlertStrategy {
     constructor() {
       this.severity = 'P2'; // default

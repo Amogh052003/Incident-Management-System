@@ -1,3 +1,4 @@
+/** Maintains registered plugins and coordinates their initialization. */
 class PluginManager {
   /** Creates an empty plugin manager. */
   constructor() {

@@ -46,6 +46,15 @@ app.use("/", require("./api/github.routes"));
 app.use("/", require("./api/repoMapping.routes"));
 app.use("/", require("./api/services.routes"));
 app.use("/", require("./api/logs.routes"));
+/**
+ * @openapi
+ * /health:
+ *   get:
+ *     summary: Check API health
+ *     responses:
+ *       200:
+ *         description: API health status with process uptime and timestamp.
+ */
 app.get("/health", (req, res) => {
     res.json({
       status: "OK",

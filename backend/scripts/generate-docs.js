@@ -1,190 +1,192 @@
 const fs = require("fs");
 const path = require("path");
+const jsdoc2md = require("jsdoc-to-markdown");
 
-const SOURCE_FILE = path.join(
-  __dirname,
-  "../src/api/audit.routes.js"
-);
+const ROOT_DIR = path.join(__dirname, "..");
+const SOURCE_DIR = path.join(ROOT_DIR, "src");
+const OUTPUT_DIR = path.join(ROOT_DIR, "docs", "reference");
 
-const OUTPUT_FILE = path.join(
-  __dirname,
-  "../docs/reference/audit-api.md"
-);
+/**
+ * Recursively finds JavaScript source files.
+ *
+ * @param {string} directory - Directory to scan.
+ * @returns {string[]} JavaScript source files.
+ */
+function findJavaScriptFiles(directory) {
+  const files = [];
 
-const source = fs.readFileSync(SOURCE_FILE, "utf8");
+  for (const entry of fs.readdirSync(directory, {
+    withFileTypes: true,
+  })) {
+    const fullPath = path.join(directory, entry.name);
 
-function parseDocumentation(source) {
-  const blocks = [];
-
-  const regex = /\/\*\*([\s\S]*?)\*\/\s*router\.(get|post|put|patch|delete)\(["']([^"']+)["']/g;
-
-  let match;
-
-  while ((match = regex.exec(source)) !== null) {
-    const comment = match[1];
-    const method = match[2].toUpperCase();
-    const route = match[3];
-
-    const lines = comment
-      .split("\n")
-      .map(line => line.replace(/^\s*\*\s?/, "").trim())
-      .filter(Boolean);
-
-    const doc = {
-      method,
-      route,
-      docId: null,
-      description: "",
-      body: [],
-      query: [],
-      responses: []
-    };
-
-    for (const line of lines) {
-      if (line.startsWith("@docId")) {
-        doc.docId = line.replace("@docId", "").trim();
-      }
-
-      else if (line.startsWith("@description")) {
-        doc.description = line
-          .replace("@description", "")
-          .trim();
-      }
-
-      else if (line.startsWith("@body")) {
-        const value = line.replace("@body", "").trim();
-
-        const parts = value.split(/\s+/);
-
-        doc.body.push({
-          name: parts[0],
-          type: parts[1],
-          required: parts[2] === "required",
-          description: parts.slice(3).join(" ")
-        });
-      }
-
-      else if (line.startsWith("@query")) {
-        const value = line.replace("@query", "").trim();
-
-        const parts = value.split(/\s+/);
-
-        doc.query.push({
-          name: parts[0],
-          type: parts[1],
-          required: parts[2] === "required",
-          description: parts.slice(3).join(" ")
-        });
-      }
-
-      else if (line.startsWith("@response")) {
-        const value = line.replace("@response", "").trim();
-
-        const parts = value.split(/\s+/);
-
-        doc.responses.push({
-          status: parts[0],
-          description: parts.slice(1).join(" ")
-        });
-      }
+    if (entry.isDirectory()) {
+      files.push(...findJavaScriptFiles(fullPath));
+      continue;
     }
 
-    blocks.push(doc);
+    if (
+      entry.isFile() &&
+      entry.name.endsWith(".js")
+    ) {
+      files.push(fullPath);
+    }
   }
 
-  return blocks;
+  return files;
 }
 
-function generateMdx(docs) {
-  let output = `---
-title: Audit API
+/**
+ * Converts a source file path into the corresponding Markdown path.
+ *
+ * Example:
+ *
+ * src/services/auditService.js
+ * ->
+ * docs/reference/services/auditService.md
+ *
+ * @param {string} sourceFile - Absolute source file path.
+ * @returns {string} Absolute Markdown output path.
+ */
+function getOutputPath(sourceFile) {
+  const relativePath = path.relative(
+    SOURCE_DIR,
+    sourceFile
+  );
+
+  return path.join(
+    OUTPUT_DIR,
+    relativePath.replace(/\.js$/, ".md")
+  );
+}
+
+/**
+ * Removes previously generated Markdown files.
+ */
+function cleanGeneratedDocumentation() {
+  if (!fs.existsSync(OUTPUT_DIR)) {
+    return;
+  }
+
+  function walk(directory) {
+    for (const entry of fs.readdirSync(directory, {
+      withFileTypes: true,
+    })) {
+      const fullPath = path.join(directory, entry.name);
+
+      if (entry.isDirectory()) {
+        walk(fullPath);
+
+        if (fs.readdirSync(fullPath).length === 0) {
+          fs.rmdirSync(fullPath);
+        }
+
+        continue;
+      }
+
+      if (!entry.name.endsWith(".md")) {
+        continue;
+      }
+
+      const content = fs.readFileSync(
+        fullPath,
+        "utf8"
+      );
+
+      if (
+        content.includes(
+          "generator: docs-as-code-demo"
+        )
+      ) {
+        fs.unlinkSync(fullPath);
+      }
+    }
+  }
+
+  walk(OUTPUT_DIR);
+}
+
+/**
+ * Generates Markdown documentation for a single JavaScript file.
+ *
+ * @param {string} sourceFile - Absolute source file path.
+ * @returns {boolean} Whether useful documentation was generated.
+ */
+async function generateDocumentation(sourceFile) {
+  const relativeSource = path
+    .relative(ROOT_DIR, sourceFile)
+    .replace(/\\/g, "/");
+
+  const markdown = await jsdoc2md.render({
+    files: sourceFile,
+  });
+
+  // No JSDoc content means there is nothing useful to publish.
+  if (!markdown.trim()) {
+    return false;
+  }
+
+  const title = path.basename(sourceFile, ".js");
+
+  const output = `---
+title: ${title}
 generated: true
-source: backend/src/api/audit.routes.js
+source: ${relativeSource}
 generator: docs-as-code-demo
 ---
 
-# Audit API
+# ${title}
 
-The Audit API provides endpoints for recording and retrieving
-audit events generated by the Incident Management System.
-
+${markdown.trim()}
 `;
 
-  for (const doc of docs) {
-    output += `## ${doc.method} ${doc.route}
+  const outputFile = getOutputPath(sourceFile);
 
-`;
+  fs.mkdirSync(path.dirname(outputFile), {
+    recursive: true,
+  });
 
-    output += `**Documentation ID:** \`${doc.docId}\`
+  fs.writeFileSync(outputFile, output, "utf8");
 
-`;
+  console.log(
+    `Generated: ${path.relative(ROOT_DIR, outputFile)}`
+  );
 
-    output += `${doc.description}
+  return true;
+}
 
-`;
+/**
+ * Generates documentation for the repository.
+ */
+async function main() {
+  console.log("Starting JSDoc documentation generation...");
 
-    if (doc.body.length > 0) {
-      output += `### Request Body
+  cleanGeneratedDocumentation();
 
-`;
+  const files = findJavaScriptFiles(SOURCE_DIR).filter((file) => {
+    const relative = path
+      .relative(SOURCE_DIR, file)
+      .replace(/\\/g, "/");
 
-      output += `| Field | Type | Required | Description |
-|---|---|---|---|
-`;
+    // API routes are documented by OpenAPI, not this JSDoc pipeline.
+    return !relative.startsWith("api/");
+  });
 
-      for (const field of doc.body) {
-        output += `| \`${field.name}\` | \`${field.type}\` | ${field.required ? "Yes" : "No"} | ${field.description} |
-`;
-      }
+  let generated = 0;
 
-      output += "\n";
-    }
-
-    if (doc.query.length > 0) {
-      output += `### Query Parameters
-
-`;
-
-      output += `| Parameter | Type | Required | Description |
-|---|---|---|---|
-`;
-
-      for (const field of doc.query) {
-        output += `| \`${field.name}\` | \`${field.type}\` | ${field.required ? "Yes" : "No"} | ${field.description} |
-`;
-      }
-
-      output += "\n";
-    }
-
-    if (doc.responses.length > 0) {
-      output += `### Responses
-
-`;
-
-      output += `| Status | Description |
-|---|---|
-`;
-
-      for (const response of doc.responses) {
-        output += `| \`${response.status}\` | ${response.description} |
-`;
-      }
-
-      output += "\n";
+  for (const sourceFile of files) {
+    if (await generateDocumentation(sourceFile)) {
+      generated++;
     }
   }
 
-  return output;
+  console.log(
+    `Generated ${generated} documentation files.`
+  );
 }
 
-const docs = parseDocumentation(source);
-const mdx = generateMdx(docs);
-
-fs.mkdirSync(path.dirname(OUTPUT_FILE), { recursive: true });
-
-fs.writeFileSync(OUTPUT_FILE, mdx);
-
-console.log(
-  `Generated ${docs.length} documentation entries → ${OUTPUT_FILE}`
-);
+main().catch((error) => {
+  console.error("Documentation generation failed:");
+  console.error(error);
+  process.exit(1);
+});

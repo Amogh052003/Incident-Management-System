@@ -15,10 +15,32 @@ const router = express.Router();
 
 const WEBHOOK_SECRET = process.env.GITHUB_WEBHOOK_SECRET;
 
+/**
+ * @openapi
+ * /github:
+ *   get:
+ *     summary: Complete GitHub connection redirect
+ *     responses:
+ *       302:
+ *         description: Redirects to the frontend with a connected query value.
+ */
 router.get("/github", (req, res) => {
   res.redirect("/?github=connected");
 });
 
+/**
+ * @openapi
+ * /github/install:
+ *   get:
+ *     summary: Get GitHub installation information
+ *     responses:
+ *       200:
+ *         description: Installation URL or existing installation information.
+ *       503:
+ *         description: GitHub App is not configured.
+ *       500:
+ *         description: Failed to retrieve GitHub installation information.
+ */
 router.get("/github/install", async (req, res) => {
   try {
     const existing = await fetchInstallationsFromGitHub();
@@ -33,6 +55,17 @@ router.get("/github/install", async (req, res) => {
   }
 });
 
+/**
+ * @openapi
+ * /github/installation:
+ *   get:
+ *     summary: Get connected GitHub installation
+ *     responses:
+ *       200:
+ *         description: GitHub connection status and installation information when connected.
+ *       500:
+ *         description: Failed to retrieve the GitHub installation.
+ */
 router.get("/github/installation", async (req, res) => {
   try {
     const inst = await getInstallation();
@@ -43,6 +76,17 @@ router.get("/github/installation", async (req, res) => {
   }
 });
 
+/**
+ * @openapi
+ * /github/services:
+ *   get:
+ *     summary: List services with repository mappings
+ *     responses:
+ *       200:
+ *         description: Services, topology information, and repository mappings.
+ *       500:
+ *         description: Failed to retrieve GitHub service data.
+ */
 router.get("/github/services", async (req, res) => {
   try {
     const state = getTopologyState();
@@ -73,6 +117,24 @@ router.get("/github/services", async (req, res) => {
   }
 });
 
+/**
+ * @openapi
+ * /github/workspace/{service}:
+ *   get:
+ *     summary: Get GitHub workspace information for a service
+ *     parameters:
+ *       - in: path
+ *         name: service
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: Service workspace, topology, incident, and repository data.
+ *       404:
+ *         description: Service not found.
+ *       500:
+ *         description: Failed to retrieve workspace information.
+ */
 router.get("/github/workspace/:service", async (req, res) => {
   try {
     const { service } = req.params;
@@ -131,6 +193,28 @@ router.get("/github/workspace/:service", async (req, res) => {
   }
 });
 
+/**
+ * @openapi
+ * /github/validate-repo:
+ *   post:
+ *     summary: Validate repository access
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [repo]
+ *             properties:
+ *               repo: { type: string }
+ *     responses:
+ *       200:
+ *         description: Repository access validation result.
+ *       400:
+ *         description: Repository is missing or GitHub is not connected.
+ *       500:
+ *         description: Failed to validate repository access.
+ */
 router.post("/github/validate-repo", async (req, res) => {
   try {
     const { repo } = req.body;
@@ -145,6 +229,31 @@ router.post("/github/validate-repo", async (req, res) => {
   }
 });
 
+/**
+ * @openapi
+ * /github/issues:
+ *   post:
+ *     summary: Create a GitHub issue
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [service, title, body]
+ *             properties:
+ *               service: { type: string }
+ *               title: { type: string }
+ *               body: { type: string }
+ *               labels: { type: array }
+ *     responses:
+ *       200:
+ *         description: Created issue information.
+ *       400:
+ *         description: Required fields are missing, GitHub is not connected, or no repository is mapped.
+ *       500:
+ *         description: Failed to create the GitHub issue.
+ */
 router.post("/github/issues", async (req, res) => {
   try {
     const { service, title, body, labels = ["incident", "ims-generated"] } = req.body;
@@ -174,6 +283,22 @@ router.post("/github/issues", async (req, res) => {
   }
 });
 
+/**
+ * @openapi
+ * /github/issues/{incidentId}:
+ *   get:
+ *     summary: Get issues linked to an incident
+ *     parameters:
+ *       - in: path
+ *         name: incidentId
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: Linked GitHub issue data.
+ *       500:
+ *         description: Failed to retrieve linked issues.
+ */
 router.get("/github/issues/:incidentId", async (req, res) => {
   try {
     const links = await getIncidentIssueLinks(req.params.incidentId);
@@ -183,6 +308,32 @@ router.get("/github/issues/:incidentId", async (req, res) => {
   }
 });
 
+/**
+ * @openapi
+ * /github/webhook:
+ *   post:
+ *     summary: Receive a GitHub webhook
+ *     description: Validates the optional webhook signature and processes the GitHub event payload.
+ *     parameters:
+ *       - in: header
+ *         name: x-hub-signature-256
+ *         required: false
+ *         schema: { type: string }
+ *       - in: header
+ *         name: x-github-event
+ *         required: false
+ *         schema: { type: string }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema: { type: object }
+ *     responses:
+ *       200:
+ *         description: Webhook acknowledged, including when processing fails.
+ *       401:
+ *         description: Webhook signature is invalid.
+ */
 router.post("/github/webhook", async (req, res) => {
   try {
     const signature = req.headers["x-hub-signature-256"];

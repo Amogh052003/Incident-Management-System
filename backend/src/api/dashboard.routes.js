@@ -9,10 +9,23 @@ const router = express.Router();
 
 
 /**
- * GET /incidents: returns incidents selected by the optional status query.
- *
- * @param {import('express').Request} req - Request with optional `status` query.
- * @param {import('express').Response} res - Response containing incident data or an error.
+ * @openapi
+ * /incidents:
+ *   get:
+ *     summary: List incidents
+ *     description: Returns incidents filtered by the optional status query parameter.
+ *     parameters:
+ *       - in: query
+ *         name: status
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: Status filter; defaults to ACTIVE.
+ *     responses:
+ *       200:
+ *         description: Incident data.
+ *       500:
+ *         description: Failed to retrieve incidents.
  */
 router.get("/incidents", async (req, res) => {
   try {
@@ -26,10 +39,22 @@ router.get("/incidents", async (req, res) => {
 
 
 /**
- * GET /incidents/:id: returns one incident or a 404 response.
- *
- * @param {import('express').Request} req - Request containing the incident ID parameter.
- * @param {import('express').Response} res - Express response.
+ * @openapi
+ * /incidents/{id}:
+ *   get:
+ *     summary: Get an incident
+ *     description: Returns the incident identified by the path parameter.
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Incident data.
+ *       404:
+ *         description: Incident lookup failed or the incident was not found.
  */
 router.get("/incidents/:id", async (req, res) => {
   try {
@@ -40,12 +65,30 @@ router.get("/incidents/:id", async (req, res) => {
   }
 });
 
-// 🔥 GET INCIDENT LOGS
 /**
- * GET /incidents/:id/logs: returns recent signal logs for an incident.
- *
- * @param {import('express').Request} req - Request containing ID and optional numeric `limit` query.
- * @param {import('express').Response} res - Express response.
+ * @openapi
+ * /incidents/{id}/logs:
+ *   get:
+ *     summary: Get incident signal logs
+ *     description: Returns recent signal logs for the incident.
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: limit
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           default: 50
+ *         description: Maximum number of logs to return.
+ *     responses:
+ *       200:
+ *         description: Signal log data.
+ *       500:
+ *         description: Failed to retrieve logs.
  */
 router.get("/incidents/:id/logs", async (req, res) => {
   try {

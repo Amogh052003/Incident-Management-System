@@ -48,6 +48,12 @@ async function searchLogs({ q, from, to, sources, severity, component, page = 1,
 /**
  * Queries PostgreSQL audit logs and maps rows to the shared log-entry shape.
  *
+ * @param {string} [q] - Text query.
+ * @param {*} [from] - Inclusive lower timestamp bound.
+ * @param {*} [to] - Inclusive upper timestamp bound.
+ * @param {string} [severity] - Comma-separated severity values.
+ * @param {string} [component] - Component filter.
+ * @param {number} limit - Maximum number of rows to query.
  * @returns {Promise<Array<Object>>} Matching audit entries.
  */
 async function queryAuditLogs(q, from, to, severity, component, limit) {
@@ -102,6 +108,11 @@ async function queryAuditLogs(q, from, to, severity, component, limit) {
 /**
  * Queries MongoDB signals and maps documents to the shared log-entry shape.
  *
+ * @param {string} [q] - Text query.
+ * @param {*} [from] - Inclusive lower timestamp bound.
+ * @param {*} [to] - Inclusive upper timestamp bound.
+ * @param {string} [component] - Component filter.
+ * @param {number} limit - Maximum number of documents to query.
  * @returns {Promise<Array<Object>>} Matching signal entries.
  */
 async function querySignalLogs(q, from, to, component, limit) {
@@ -142,6 +153,11 @@ async function querySignalLogs(q, from, to, component, limit) {
 /**
  * Queries PostgreSQL work-item status logs and maps rows to the shared log-entry shape.
  *
+ * @param {string} [q] - Text query.
+ * @param {*} [from] - Inclusive lower timestamp bound.
+ * @param {*} [to] - Inclusive upper timestamp bound.
+ * @param {string} [component] - Component filter.
+ * @param {number} limit - Maximum number of rows to query.
  * @returns {Promise<Array<Object>>} Matching status-change entries.
  */
 async function queryWorkItemLogs(q, from, to, component, limit) {

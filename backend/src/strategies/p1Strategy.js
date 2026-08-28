@@ -1,5 +1,6 @@
 const AlertStrategy = require("./alertStrategy");
 
+/** Alert strategy for high-priority P1 incidents. */
 class P1Strategy extends AlertStrategy {
   constructor() {
     super();
