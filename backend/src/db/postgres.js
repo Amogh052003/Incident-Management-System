@@ -9,3 +9,5 @@ const pgPool = new Pool({
 });
 
 module.exports = { pgPool };
+
+// making some changes to trigger the CI
