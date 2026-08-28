@@ -158,7 +158,6 @@ ${markdown.trim()}
 /**
  * Generates documentation for the repository.
  */
-
 async function main() {
   console.log("Starting JSDoc documentation generation...");
 
